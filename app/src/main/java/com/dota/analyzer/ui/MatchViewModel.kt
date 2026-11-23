@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 sealed interface MatchState {
     data object Idle : MatchState
     data object Loading : MatchState
-    data class Success(val match: Match) : MatchState
+    data class Success(val match: Match, val heroNames: Map<Int, String>) : MatchState
     data class Error(val message: String) : MatchState
 }
 
@@ -30,7 +30,9 @@ class MatchViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = MatchState.Loading
             _state.value = try {
-                MatchState.Success(repository.getMatch(id))
+                val match = repository.getMatch(id)
+                val heroes = runCatching { repository.getHeroNames() }.getOrDefault(emptyMap())
+                MatchState.Success(match, heroes)
             } catch (e: Exception) {
                 MatchState.Error(
                     when {
