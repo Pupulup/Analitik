@@ -10,7 +10,9 @@ data class Match(
     @SerializedName("radiant_score") val radiantScore: Int = 0,
     @SerializedName("dire_score") val direScore: Int = 0,
     @SerializedName("game_mode") val gameMode: Int = 0,
-    @SerializedName("players") val players: List<Player> = emptyList()
+    @SerializedName("players") val players: List<Player> = emptyList(),
+    @SerializedName("radiant_gold_adv") val radiantGoldAdv: List<Int> = emptyList(),
+    @SerializedName("radiant_xp_adv") val radiantXpAdv: List<Int> = emptyList()
 )
 
 data class Player(
@@ -28,7 +30,8 @@ data class Player(
     @SerializedName("tower_damage") val towerDamage: Int = 0,
     @SerializedName("hero_healing") val heroHealing: Int = 0,
     @SerializedName("net_worth") val netWorth: Int = 0,
-    @SerializedName("level") val level: Int = 0
+    @SerializedName("level") val level: Int = 0,
+    @SerializedName("lane_role") val laneRole: Int = 0
 ) {
     val isRadiant: Boolean get() = playerSlot < 128
     val kda: Double get() = (kills + assists).toDouble() / maxOf(1, deaths)
