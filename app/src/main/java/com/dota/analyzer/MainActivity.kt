@@ -84,7 +84,7 @@ fun DotaAnalyzerApp(vm: MatchViewModel) {
                         Text("Не удалось загрузить", color = Color(0xFFFF8585), fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp)); Text(s.message, color = Muted)
                     }
-                    is MatchState.Success -> MatchDetails(s.match)
+                    is MatchState.Success -> MatchDetails(s.match, s.heroNames)
                 }
             }
         }
@@ -101,7 +101,7 @@ private fun EmptyState() {
 }
 
 @Composable
-private fun MatchDetails(match: Match) {
+private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 28.dp)) {
         item {
             CardBlock {
@@ -114,7 +114,7 @@ private fun MatchDetails(match: Match) {
             }
         }
         item { Text("ИГРОКИ", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp) }
-        items(match.players) { player -> PlayerCard(player) }
+        items(match.players) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}") }
         item {
             Text("Оценка вклада в этой версии основана на доступных игровых показателях. Это аналитическая сводка, а не официальный рейтинг Valve.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
         }
@@ -122,11 +122,11 @@ private fun MatchDetails(match: Match) {
 }
 
 @Composable
-private fun PlayerCard(p: Player) {
+private fun PlayerCard(p: Player, heroName: String) {
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Герой #${p.heroId}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text(if (p.isRadiant) "СВЕТ" else "ТЬМА", color = if (p.isRadiant) Color(0xFF79C99A) else Color(0xFFE58A8A), fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Text("${p.kills}/${p.deaths}/${p.assists}", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
