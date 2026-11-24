@@ -425,7 +425,7 @@ private fun EconomyScreen(match: Match, impacts: List<PlayerImpact>) {
 }
 
 @Composable
-private fun ItemsScreen(match: Match, heroNames: Map<Int, String>) {
+private fun ItemsScreen(match: Match, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>) {
     val playersWithPurchases = match.players.filter { !it.purchaseLog.isNullOrEmpty() }.sortedBy { it.playerSlot }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -436,7 +436,7 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>) {
             CardBlock {
                 Text("ПОКУПКИ И ПОРЯДОК СБОРКИ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
-                Text("Показаны события покупки, которые вернул OpenDota. Это журнал матча, а не автоматически сформированная рекомендуемая сборка.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                Text("Выберите игрока, чтобы раскрыть покупки по времени. Значки и названия предметов помогают быстро просмотреть сборку.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
             }
         }
         if (playersWithPurchases.isEmpty()) {
@@ -444,17 +444,40 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>) {
                 CardBlock {
                     Text("Данные о покупках недоступны", color = Color.White, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(5.dp))
-                    Text("Для этого матча OpenDota не вернул purchase_log. Раздел появится автоматически для матчей, где эти данные доступны.", color = Muted, fontSize = 11.sp)
+                    Text("Для этого матча OpenDota не вернул purchase_log.", color = Muted, fontSize = 11.sp)
                 }
             }
         } else {
             items(playersWithPurchases) { player ->
+                var expanded by remember(player.playerSlot, player.heroId) { mutableStateOf(false) }
+                val purchases = player.purchaseLog.orEmpty().filter { it.key.isNotBlank() }.sortedBy { it.time }
                 CardBlock {
-                    Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Text(if (player.isRadiant) "СВЕТ" else "ТЬМА", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
-                    Spacer(Modifier.height(8.dp))
-                    player.purchaseLog.orEmpty().sortedBy { it.time }.forEach { purchase ->
-                        DetailLine(formatDuration(purchase.time), purchase.key.replace('_', ' '))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 62.dp, height = 42.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("\${if (player.isRadiant) "СВЕТ" else "ТЬМА"} · \${purchases.size} покупок", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
+                        }
+                        TextButton(onClick = { expanded = !expanded }) {
+                            Text(if (expanded) "Свернуть" else "Показать", color = Accent, fontSize = 11.sp)
+                        }
+                    }
+                    if (expanded) {
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(color = Color(0xFF2A3443))
+                        Spacer(Modifier.height(8.dp))
+                        purchases.forEach { purchase ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                                ItemArtwork(purchase.key, Modifier.size(42.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(humanizeItem(purchase.key), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Покупка", color = Muted, fontSize = 9.sp)
+                                }
+                                Text(formatDuration(purchase.time), color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }
