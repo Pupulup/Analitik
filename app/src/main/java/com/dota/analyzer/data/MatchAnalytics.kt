@@ -69,7 +69,7 @@ object MatchAnalytics {
         val utility = normalizeNullable(players) { player ->
             val values = mutableListOf<Double>()
             values += player.assists * 20.0
-            player.heroHealing?.let { values += it.toDouble() }
+            values += player.heroHealing.toDouble()
             player.stuns?.let { values += it * 100.0 }
             player.observerWardsPlaced?.let { values += it * 250.0 }
             player.sentryWardsPlaced?.let { values += it * 150.0 }

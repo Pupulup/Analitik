@@ -29,6 +29,7 @@ import com.dota.analyzer.data.Match
 import com.dota.analyzer.data.MatchAnalytics
 import com.dota.analyzer.data.Player
 import com.dota.analyzer.data.PlayerImpact
+import com.dota.analyzer.data.TimelineEvent
 import com.dota.analyzer.data.PdfReportExporter
 import androidx.compose.ui.platform.LocalContext
 import com.dota.analyzer.ui.MatchState
