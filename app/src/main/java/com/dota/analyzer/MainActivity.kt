@@ -118,6 +118,7 @@ private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
     val context = LocalContext.current
     val impacts = remember(match) { MatchAnalytics.analyze(match.players) }
     val impactByPlayer = impacts.associateBy { it.player }
+    val timeline = remember(match) { MatchAnalytics.timeline(match.players) }
     val radiantPlayers = match.players.filter { it.isRadiant }.sortedBy { it.playerSlot }
     val direPlayers = match.players.filterNot { it.isRadiant }.sortedBy { it.playerSlot }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 28.dp)) {
@@ -145,7 +146,6 @@ private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
             item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ОПЫТУ", match.radiantXpAdv, XpLine, "Свет впереди", "Тьма впереди") }
         }
         item { TeamComparison(match, impacts) }
-        val timeline = remember(match) { MatchAnalytics.timeline(match.players) }
         if (timeline.isNotEmpty()) {
             item { MatchTimeline(timeline, heroNames) }
         }
