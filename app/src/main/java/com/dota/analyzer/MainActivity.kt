@@ -29,6 +29,8 @@ import com.dota.analyzer.data.Match
 import com.dota.analyzer.data.MatchAnalytics
 import com.dota.analyzer.data.Player
 import com.dota.analyzer.data.PlayerImpact
+import com.dota.analyzer.data.PdfReportExporter
+import androidx.compose.ui.platform.LocalContext
 import com.dota.analyzer.ui.MatchState
 import com.dota.analyzer.ui.MatchViewModel
 import java.util.Locale
@@ -112,6 +114,7 @@ private fun EmptyState() {
 
 @Composable
 private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
+    val context = LocalContext.current
     val impacts = remember(match) { MatchAnalytics.analyze(match.players) }
     val impactByPlayer = impacts.associateBy { it.player }
     val radiantPlayers = match.players.filter { it.isRadiant }.sortedBy { it.playerSlot }
@@ -125,6 +128,10 @@ private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
                 Text(winner, color = Accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text("${match.radiantScore}  :  ${match.direScore}", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
                 Text("Длительность: ${formatDuration(match.duration)}  •  Режим: ${gameModeName(match.gameMode)}", color = Muted, fontSize = 12.sp)
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = { runCatching { PdfReportExporter.share(context, match, heroNames, impacts) } }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Экспорт подробного PDF-отчёта", color = Accent)
+                }
                 if (match.startTime > 0) {
                     Text("Начало: ${java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(java.util.Date(match.startTime * 1000))}", color = Muted, fontSize = 11.sp)
                 }
@@ -135,6 +142,11 @@ private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
         }
         if (match.radiantXpAdv.isNotEmpty()) {
             item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ОПЫТУ", match.radiantXpAdv, XpLine, "Свет впереди", "Тьма впереди") }
+        }
+        item { TeamComparison(match, impacts) }
+        val timeline = remember(match) { MatchAnalytics.timeline(match.players) }
+        if (timeline.isNotEmpty()) {
+            item { MatchTimeline(timeline, heroNames) }
         }
         item { TeamHeader("СВЕТ", radiantPlayers.size, Radiant) }
         items(radiantPlayers) { player ->
@@ -148,7 +160,7 @@ private fun MatchDetails(match: Match, heroNames: Map<Int, String>) {
             CardBlock {
                 Text("КАК ЧИТАТЬ ОЦЕНКУ", color = Accent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Spacer(Modifier.height(6.dp))
-                Text("Индекс вклада — сравнительная оценка от 0 до 100 внутри конкретного матча. Он учитывает боевую эффективность, экономику, давление на строения и полезность. Веса меняются в зависимости от позиции: например, у саппорта выше вклад помощи и лечения, у кора — экономики. Это аналитическая модель приложения, а не официальный рейтинг Valve.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+                Text("Индекс вклада — сравнительная эвристическая оценка от 0 до 100 внутри конкретного матча. В текущей модели учитываются бой (20%), экономика (20%), опыт (15%), урон героям (20%), объекты (10%), добивания (5%) и выживаемость (10%). Дополнительные метрики показываются отдельно, если их вернул OpenDota. Отсутствующие поля не трактуются как нулевой результат. Это не официальный рейтинг Valve.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
             }
         }
     }
@@ -167,11 +179,12 @@ private fun TeamHeader(name: String, count: Int, color: Color) {
 
 @Composable
 private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
+    var expanded by remember(p.playerSlot, p.heroId) { mutableStateOf(false) }
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text("${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • ${impact?.roleName ?: MatchAnalytics.roleFor(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • ${impact?.roleName ?: MatchAnalytics.laneName(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(impact?.score?.toString() ?: "—", color = scoreColor(impact?.score ?: 0), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
@@ -190,8 +203,8 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
         HorizontalDivider(color = Color(0xFF2A3443))
         Spacer(Modifier.height(9.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            SmallStat("Урон героя", compact(p.heroDamage))
-            SmallStat("Урон башням", compact(p.towerDamage))
+            SmallStat("Урон героям", compact(p.heroDamage))
+            SmallStat("Урон зданиям", compact(p.towerDamage))
             SmallStat("Лечение", compact(p.heroHealing))
             SmallStat("Добивания", p.lastHits.toString())
         }
@@ -199,11 +212,105 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
             Spacer(Modifier.height(12.dp))
             ImpactMetric("Бой", impact.combat)
             ImpactMetric("Экономика", impact.economy)
+            ImpactMetric("Опыт", impact.experience)
+            ImpactMetric("Урон героям", impact.heroDamage)
             ImpactMetric("Объекты", impact.objectives)
-            ImpactMetric("Полезность", impact.utility)
+            ImpactMetric("Добивания", impact.lastHits)
+            ImpactMetric("Выживаемость", impact.survivability)
+        }
+        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+            Text(if (expanded) "Скрыть подробности" else "Подробная статистика", color = Accent)
+        }
+        if (expanded) {
+            HorizontalDivider(color = Color(0xFF2A3443))
+            Spacer(Modifier.height(9.dp))
+            Text("ДОПОЛНИТЕЛЬНЫЕ ПОКАЗАТЕЛИ", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            DetailLine("Участие в командных боях", p.teamfightParticipation?.let { String.format(Locale.US, "%.1f%%", it * 100.0) } ?: "Нет данных")
+            DetailLine("Оглушения", p.stuns?.let { String.format(Locale.US, "%.1f сек.", it) } ?: "Нет данных")
+            DetailLine("Эффективность линии", p.laneEfficiencyPct?.let { String.format(Locale.US, "%.1f%%", it * 100.0) } ?: p.laneEfficiency?.let { String.format(Locale.US, "%.2f", it) } ?: "Нет данных")
+            DetailLine("Observer / Sentry", "${p.observerWardsPlaced?.toString() ?: "—"} / ${p.sentryWardsPlaced?.toString() ?: "—"}")
+            DetailLine("Уничтожено вардов", "${p.observerWardsKilled?.toString() ?: "—"} / ${p.sentryWardsKilled?.toString() ?: "—"}")
+            DetailLine("Стаки / руны", "${p.campsStacked?.toString() ?: "—"} / ${p.runePickups?.toString() ?: "—"}")
+            DetailLine("Башни / Рошан", "${p.towerKills?.toString() ?: "—"} / ${p.roshanKills?.toString() ?: "—"}")
+            DetailLine("Убийства курьеров", p.courierKills?.toString() ?: "Нет данных")
+            DetailLine("Выкупы", p.buybackCount?.toString() ?: "Нет данных")
+            DetailLine("Действий в минуту", p.actionsPerMinute?.toString() ?: "Нет данных")
+            DetailLine("Нейтральные убийства", p.neutralKills?.toString() ?: "Нет данных")
+            if (impact.strengths.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text("Сильные стороны: ${impact.strengths.joinToString()}", color = Radiant, fontSize = 10.sp)
+            }
+            if (impact.weaknesses.isNotEmpty()) {
+                Spacer(Modifier.height(5.dp))
+                Text("Зоны роста: ${impact.weaknesses.joinToString()}", color = Dire, fontSize = 10.sp)
+            }
+            val purchases = p.purchaseLog.orEmpty().takeLast(5).asReversed()
+            if (purchases.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                Text("ПОСЛЕДНИЕ ПОКУПКИ", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                purchases.forEach { purchase ->
+                    DetailLine(formatDuration(purchase.time), purchase.key.replace('_', ' '))
+                }
+            }
         }
     }
 }
+
+@Composable
+private fun DetailLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = Muted, fontSize = 10.sp, modifier = Modifier.weight(1f))
+        Text(value, color = Color.White, fontSize = 10.sp)
+    }
+}
+
+@Composable
+private fun TeamComparison(match: Match, impacts: List<PlayerImpact>) {
+    val teams = remember(match, impacts) { MatchAnalytics.teams(match.players, impacts) }
+    val radiant = teams.firstOrNull { it.isRadiant }
+    val dire = teams.firstOrNull { !it.isRadiant }
+    if (radiant == null || dire == null) return
+    CardBlock {
+        Text("СРАВНЕНИЕ КОМАНД", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+        Spacer(Modifier.height(12.dp))
+        TeamCompareRow("Средний вклад", radiant.averageImpact.toString(), dire.averageImpact.toString(), Radiant, Dire)
+        TeamCompareRow("Средний GPM", radiant.averageGpm.toString(), dire.averageGpm.toString(), Radiant, Dire)
+        TeamCompareRow("Средний XPM", radiant.averageXpm.toString(), dire.averageXpm.toString(), Radiant, Dire)
+        TeamCompareRow("Урон героям", compactLong(radiant.totalHeroDamage), compactLong(dire.totalHeroDamage), Radiant, Dire)
+        TeamCompareRow("Урон строениям", compactLong(radiant.totalTowerDamage), compactLong(dire.totalTowerDamage), Radiant, Dire)
+        TeamCompareRow("Общий net worth", compactLong(radiant.totalNetWorth), compactLong(dire.totalNetWorth), Radiant, Dire)
+        TeamCompareRow("K / D / A", "${radiant.totalKills}/${radiant.totalDeaths}/${radiant.totalAssists}", "${dire.totalKills}/${dire.totalDeaths}/${dire.totalAssists}", Radiant, Dire)
+    }
+}
+
+@Composable
+private fun TeamCompareRow(label: String, radiant: String, dire: String, radiantColor: Color, direColor: Color) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(radiant, color = radiantColor, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(label, color = Muted, fontSize = 9.sp, modifier = Modifier.weight(1.4f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(dire, color = direColor, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+    }
+}
+
+@Composable
+private fun MatchTimeline(events: List<TimelineEvent>, heroNames: Map<Int, String>) {
+    CardBlock {
+        Text("ХРОНОЛОГИЯ УБИЙСТВ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+        Spacer(Modifier.height(8.dp))
+        events.take(18).forEach { event ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(formatDuration(event.timeSeconds), color = Muted, fontSize = 10.sp, modifier = Modifier.width(48.dp))
+                Text(heroNames[event.heroId] ?: "Герой #${event.heroId}", color = if (event.isRadiant) Radiant else Dire, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(event.description, color = Color.White, fontSize = 10.sp)
+            }
+        }
+        if (events.size > 18) Text("Показаны первые 18 из ${events.size} событий.", color = Muted, fontSize = 9.sp)
+    }
+}
+
+private fun compactLong(value: Long): String =
+    if (value >= 1000) String.format(Locale.US, "%.1fk", value / 1000.0) else value.toString()
 
 @Composable
 private fun ImpactMetric(label: String, value: Int) {

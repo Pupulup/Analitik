@@ -31,8 +31,40 @@ data class Player(
     @SerializedName("hero_healing") val heroHealing: Int = 0,
     @SerializedName("net_worth") val netWorth: Int = 0,
     @SerializedName("level") val level: Int = 0,
-    @SerializedName("lane_role") val laneRole: Int = 0
+    @SerializedName("lane_role") val laneRole: Int = 0,
+    @SerializedName("stuns") val stuns: Double? = null,
+    @SerializedName("teamfight_participation") val teamfightParticipation: Double? = null,
+    @SerializedName("lane_efficiency") val laneEfficiency: Double? = null,
+    @SerializedName("lane_efficiency_pct") val laneEfficiencyPct: Double? = null,
+    @SerializedName("camps_stacked") val campsStacked: Int? = null,
+    @SerializedName("rune_pickups") val runePickups: Int? = null,
+    @SerializedName("tower_kills") val towerKills: Int? = null,
+    @SerializedName("roshan_kills") val roshanKills: Int? = null,
+    @SerializedName("buyback_count") val buybackCount: Int? = null,
+    @SerializedName("obs_placed") val observerWardsPlaced: Int? = null,
+    @SerializedName("sen_placed") val sentryWardsPlaced: Int? = null,
+    @SerializedName("observer_kills") val observerWardsKilled: Int? = null,
+    @SerializedName("sentry_kills") val sentryWardsKilled: Int? = null,
+    @SerializedName("courier_kills") val courierKills: Int? = null,
+    @SerializedName("neutral_kills") val neutralKills: Int? = null,
+    @SerializedName("hero_kills") val heroKills: Int? = null,
+    @SerializedName("actions_per_min") val actionsPerMinute: Int? = null,
+    @SerializedName("gold_t") val goldTimeline: List<Int>? = null,
+    @SerializedName("xp_t") val xpTimeline: List<Int>? = null,
+    @SerializedName("lh_t") val lastHitsTimeline: List<Int>? = null,
+    @SerializedName("purchase_log") val purchaseLog: List<PurchaseEvent>? = null,
+    @SerializedName("kills_log") val killsLog: List<KillEvent>? = null
 ) {
     val isRadiant: Boolean get() = playerSlot < 128
     val kda: Double get() = (kills + assists).toDouble() / maxOf(1, deaths)
 }
+
+data class PurchaseEvent(
+    @SerializedName("time") val time: Int = 0,
+    @SerializedName("key") val key: String = ""
+)
+
+data class KillEvent(
+    @SerializedName("time") val time: Int = 0,
+    @SerializedName("key") val key: String = ""
+)
