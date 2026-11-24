@@ -12,7 +12,9 @@ data class Match(
     @SerializedName("game_mode") val gameMode: Int = 0,
     @SerializedName("players") val players: List<Player> = emptyList(),
     @SerializedName("radiant_gold_adv") val radiantGoldAdv: List<Int> = emptyList(),
-    @SerializedName("radiant_xp_adv") val radiantXpAdv: List<Int> = emptyList()
+    @SerializedName("radiant_xp_adv") val radiantXpAdv: List<Int> = emptyList(),
+    @SerializedName("objectives") val objectives: List<ObjectiveEvent> = emptyList(),
+    @SerializedName("teamfights") val teamfights: List<Teamfight> = emptyList()
 )
 
 data class Player(
@@ -68,4 +70,31 @@ data class PurchaseEvent(
 data class KillEvent(
     @SerializedName("time") val time: Int = 0,
     @SerializedName("key") val key: String = ""
+)
+
+
+data class ObjectiveEvent(
+    @SerializedName("time") val time: Int = 0,
+    @SerializedName("type") val type: String = "",
+    @SerializedName("key") val key: String = "",
+    @SerializedName("slot") val slot: Int? = null,
+    @SerializedName("player_slot") val playerSlot: Int? = null
+)
+
+data class Teamfight(
+    @SerializedName("start") val start: Int = 0,
+    @SerializedName("end") val end: Int = 0,
+    @SerializedName("last_death") val lastDeath: Int = 0,
+    @SerializedName("deaths") val deaths: Int = 0,
+    @SerializedName("players") val players: List<TeamfightPlayer> = emptyList()
+)
+
+data class TeamfightPlayer(
+    @SerializedName("player_slot") val playerSlot: Int = -1,
+    @SerializedName("buyback") val buyback: Boolean = false,
+    @SerializedName("deaths") val deaths: Int = 0,
+    @SerializedName("gold_delta") val goldDelta: Int = 0,
+    @SerializedName("xp_delta") val xpDelta: Int = 0,
+    @SerializedName("damage") val damage: Int = 0,
+    @SerializedName("healing") val healing: Int = 0
 )
