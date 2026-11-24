@@ -93,7 +93,7 @@ data class Teamfight(
 
 data class TeamfightPlayer(
     @SerializedName("player_slot") val playerSlot: Int = -1,
-    @SerializedName("buyback") val buyback: Boolean = false,
+    @SerializedName("buyback") val buyback: Boolean? = null,
     @SerializedName("deaths") val deaths: Int? = null,
     @SerializedName("gold_delta") val goldDelta: Int? = null,
     @SerializedName("xp_delta") val xpDelta: Int? = null,
