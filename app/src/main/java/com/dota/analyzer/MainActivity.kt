@@ -321,7 +321,7 @@ private fun PlayersScreen(match: Match, heroNames: Map<Int, String>, heroImageNa
         item { TeamHeader("СВЕТ", radiant.size, Radiant) }
         items(radiant) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", heroImageNames[player.heroId], impactByPlayer[player]) }
         item { TeamHeader("ТЬМА", dire.size, Dire) }
-        items(dire) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", impactByPlayer[player]) }
+        items(dire) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", heroImageNames[player.heroId], impactByPlayer[player]) }
     }
 }
 
