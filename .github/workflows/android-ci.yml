@@ -5,9 +5,11 @@ on:
     branches:
       - master
       - feature/android-app
+      - feature/player-profile-guides-v1
   pull_request:
     branches:
       - master
+      - feature/android-app
 
 jobs:
   build:
