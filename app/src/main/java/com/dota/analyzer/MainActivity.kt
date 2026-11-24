@@ -189,7 +189,7 @@ private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: L
     ) {
         item {
             CardBlock {
-                Text("МАТЧ #\${match.matchId}", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Text("МАТЧ #${match.matchId}", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 Spacer(Modifier.height(8.dp))
                 val winner = when (match.radiantWin) {
                     true -> "ПОБЕДА СВЕТА"
@@ -197,23 +197,23 @@ private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: L
                     null -> "РЕЗУЛЬТАТ НЕИЗВЕСТЕН"
                 }
                 Text(winner, color = Accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("\${match.radiantScore} : \${match.direScore}", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
-                Text("Длительность: \${formatDuration(match.duration)}  •  Режим: \${gameModeName(match.gameMode)}", color = Muted, fontSize = 12.sp)
+                Text("${match.radiantScore} : ${match.direScore}", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Длительность: ${formatDuration(match.duration)}  •  Режим: ${gameModeName(match.gameMode)}", color = Muted, fontSize = 12.sp)
                 if (match.startTime > 0) {
                     Spacer(Modifier.height(5.dp))
-                    Text("Начало: \${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(match.startTime * 1000))}", color = Muted, fontSize = 11.sp)
+                    Text("Начало: ${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(match.startTime * 1000))}", color = Muted, fontSize = 11.sp)
                 }
             }
         }
         item { TeamComparison(match, impacts) }
         item {
             val top = impacts.maxByOrNull { it.score }
-            val name = top?.let { heroNames[it.player.heroId] ?: "Герой #\${it.player.heroId}" } ?: "Нет данных"
+            val name = top?.let { heroNames[it.player.heroId] ?: "Герой #${it.player.heroId}" } ?: "Нет данных"
             CardBlock {
                 Text("ЛУЧШИЙ ПО ИНДЕКСУ ВКЛАДА", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Text(name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Оценка \${top?.score ?: "—"} / 100 · сравнительный показатель внутри матча", color = Muted, fontSize = 11.sp)
+                Text("Оценка ${top?.score ?: "—"} / 100 · сравнительный показатель внутри матча", color = Muted, fontSize = 11.sp)
             }
         }
         item {
@@ -234,7 +234,7 @@ private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: L
 private fun TeamRosterLine(title: String, players: List<Player>, heroNames: Map<Int, String>, color: Color) {
     Text(title, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     players.sortedBy { it.playerSlot }.forEach { player ->
-        Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
@@ -249,9 +249,9 @@ private fun PlayersScreen(match: Match, heroNames: Map<Int, String>, impacts: Li
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
     ) {
         item { TeamHeader("СВЕТ", radiant.size, Radiant) }
-        items(radiant) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #\${player.heroId}", impactByPlayer[player]) }
+        items(radiant) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", impactByPlayer[player]) }
         item { TeamHeader("ТЬМА", dire.size, Dire) }
-        items(dire) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #\${player.heroId}", impactByPlayer[player]) }
+        items(dire) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", impactByPlayer[player]) }
     }
 }
 
@@ -276,19 +276,19 @@ private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, impacts: L
                 Spacer(Modifier.height(8.dp))
                 ranked.forEachIndexed { index, impact ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("\${index + 1}.", color = Muted, fontSize = 12.sp, modifier = Modifier.width(24.dp))
+                        Text("${index + 1}.", color = Muted, fontSize = 12.sp, modifier = Modifier.width(24.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(heroNames[impact.player.heroId] ?: "Герой #\${impact.player.heroId}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            Text("\${if (impact.player.isRadiant) "Свет" else "Тьма"} · \${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
+                            Text(heroNames[impact.player.heroId] ?: "Герой #${impact.player.heroId}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text("${if (impact.player.isRadiant) "Свет" else "Тьма"} · ${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
                         }
-                        Text("\${impact.score}", color = scoreColor(impact.score), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("${impact.score}", color = scoreColor(impact.score), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     if (index != ranked.lastIndex) HorizontalDivider(color = Color(0xFF2A3443))
                 }
             }
         }
         items(ranked) { impact ->
-            PlayerAnalysisCard(impact, heroNames[impact.player.heroId] ?: "Герой #\${impact.player.heroId}")
+            PlayerAnalysisCard(impact, heroNames[impact.player.heroId] ?: "Герой #${impact.player.heroId}")
         }
     }
 }
@@ -299,9 +299,9 @@ private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text("\${if (impact.player.isRadiant) "СВЕТ" else "ТЬМА"} · \${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
+                Text("${if (impact.player.isRadiant) "СВЕТ" else "ТЬМА"} · ${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
             }
-            Text("\${impact.score}/100", color = scoreColor(impact.score), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text("${impact.score}/100", color = scoreColor(impact.score), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
         }
         Spacer(Modifier.height(12.dp))
         ImpactMetric("Бой", impact.combat)
@@ -345,7 +345,7 @@ private fun EconomyScreen(match: Match, impacts: List<PlayerImpact>) {
                 match.players.sortedByDescending { it.netWorth }.forEach { player ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (player.isRadiant) "С" else "Т", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(18.dp))
-                        Text("GPM \${player.gpm} · XPM \${player.xpm}", color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                        Text("GPM ${player.gpm} · XPM ${player.xpm}", color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
                         Text(compact(player.netWorth), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -380,7 +380,7 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>) {
         } else {
             items(playersWithPurchases) { player ->
                 CardBlock {
-                    Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text(if (player.isRadiant) "СВЕТ" else "ТЬМА", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
                     Spacer(Modifier.height(8.dp))
                     player.purchaseLog.orEmpty().sortedBy { it.time }.forEach { purchase ->
@@ -410,7 +410,7 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text("\${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • \${impact?.roleName ?: MatchAnalytics.laneName(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • ${impact?.roleName ?: MatchAnalytics.laneName(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(impact?.score?.toString() ?: "—", color = scoreColor(impact?.score ?: 0), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
@@ -419,7 +419,7 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Stat("K/D/A", "\${p.kills}/\${p.deaths}/\${p.assists}")
+            Stat("K/D/A", "${p.kills}/${p.deaths}/${p.assists}")
             Stat("KDA", String.format(Locale.US, "%.2f", p.kda))
             Stat("GPM", p.gpm.toString())
             Stat("XPM", p.xpm.toString())
@@ -445,17 +445,17 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
             DetailLine("Участие в командных боях", p.teamfightParticipation?.let { String.format(Locale.US, "%.1f%%", it * 100.0) } ?: "Нет данных")
             DetailLine("Оглушения", p.stuns?.let { String.format(Locale.US, "%.1f сек.", it) } ?: "Нет данных")
             DetailLine("Эффективность линии", p.laneEfficiencyPct?.let { String.format(Locale.US, "%.1f%%", it * 100.0) } ?: p.laneEfficiency?.let { String.format(Locale.US, "%.2f", it) } ?: "Нет данных")
-            DetailLine("Observer / Sentry", "\${p.observerWardsPlaced?.toString() ?: "—"} / \${p.sentryWardsPlaced?.toString() ?: "—"}")
-            DetailLine("Уничтожено вардов", "\${p.observerWardsKilled?.toString() ?: "—"} / \${p.sentryWardsKilled?.toString() ?: "—"}")
-            DetailLine("Стаки / руны", "\${p.campsStacked?.toString() ?: "—"} / \${p.runePickups?.toString() ?: "—"}")
-            DetailLine("Башни / Рошан", "\${p.towerKills?.toString() ?: "—"} / \${p.roshanKills?.toString() ?: "—"}")
+            DetailLine("Observer / Sentry", "${p.observerWardsPlaced?.toString() ?: "—"} / ${p.sentryWardsPlaced?.toString() ?: "—"}")
+            DetailLine("Уничтожено вардов", "${p.observerWardsKilled?.toString() ?: "—"} / ${p.sentryWardsKilled?.toString() ?: "—"}")
+            DetailLine("Стаки / руны", "${p.campsStacked?.toString() ?: "—"} / ${p.runePickups?.toString() ?: "—"}")
+            DetailLine("Башни / Рошан", "${p.towerKills?.toString() ?: "—"} / ${p.roshanKills?.toString() ?: "—"}")
             DetailLine("Убийства курьеров", p.courierKills?.toString() ?: "Нет данных")
             DetailLine("Выкупы", p.buybackCount?.toString() ?: "Нет данных")
             DetailLine("Действий в минуту", p.actionsPerMinute?.toString() ?: "Нет данных")
             DetailLine("Нейтральные убийства", p.neutralKills?.toString() ?: "Нет данных")
             impact?.let {
-                if (it.strengths.isNotEmpty()) Text("Сильные стороны: \${it.strengths.joinToString()}", color = Radiant, fontSize = 10.sp)
-                if (it.weaknesses.isNotEmpty()) Text("Зоны роста: \${it.weaknesses.joinToString()}", color = Dire, fontSize = 10.sp)
+                if (it.strengths.isNotEmpty()) Text("Сильные стороны: ${it.strengths.joinToString()}", color = Radiant, fontSize = 10.sp)
+                if (it.weaknesses.isNotEmpty()) Text("Зоны роста: ${it.weaknesses.joinToString()}", color = Dire, fontSize = 10.sp)
             }
         }
     }
@@ -475,7 +475,7 @@ private fun TeamComparison(match: Match, impacts: List<PlayerImpact>) {
         TeamCompareRow("Урон героям", compactLong(radiant.totalHeroDamage), compactLong(dire.totalHeroDamage))
         TeamCompareRow("Урон строениям", compactLong(radiant.totalTowerDamage), compactLong(dire.totalTowerDamage))
         TeamCompareRow("Общий net worth", compactLong(radiant.totalNetWorth), compactLong(dire.totalNetWorth))
-        TeamCompareRow("K / D / A", "\${radiant.totalKills}/\${radiant.totalDeaths}/\${radiant.totalAssists}", "\${dire.totalKills}/\${dire.totalDeaths}/\${dire.totalAssists}")
+        TeamCompareRow("K / D / A", "${radiant.totalKills}/${radiant.totalDeaths}/${radiant.totalAssists}", "${dire.totalKills}/${dire.totalDeaths}/${dire.totalAssists}")
     }
 }
 
