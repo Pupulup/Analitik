@@ -841,8 +841,8 @@ private fun MatchMapScreen(match: Match) {
                     )
                     Canvas(Modifier.matchParentSize()) {
                         visibleWards.forEach { ward ->
-                            val x = (ward.x.coerceIn(0, 255) / 255f) * size.width
-                            val y = (1f - ward.y.coerceIn(0, 255) / 255f) * size.height
+                            val x = ((ward.x - 64).coerceIn(0, 128) / 128f) * size.width
+                            val y = (1f - (ward.y - 64).coerceIn(0, 128) / 128f) * size.height
                             val color = if (ward.isObserver) Color(0xFFFFD36A) else Color(0xFF72D7E8)
                             drawCircle(color = Color.Black.copy(alpha = 0.8f), radius = 7.dp.toPx(), center = Offset(x, y))
                             drawCircle(color = color, radius = 4.5.dp.toPx(), center = Offset(x, y))
@@ -864,7 +864,7 @@ private fun MatchMapScreen(match: Match) {
                 if (wards.isEmpty()) {
                     Text("OpenDota не передала координаты установки вардов. Карта останется без маркеров — это не означает, что обзор отсутствовал.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                 } else {
-                    Text("Показаны точки установки до выбранной минуты. Координаты взяты из ward logs; положение боёв и объектов не дорисовывается.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                    Text("Показаны точки установки до выбранной минуты. Координаты OpenDota приведены к диапазону карты 64–192; положение боёв и объектов не дорисовывается.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                 }
                 Text("Подложка карты 7.40; маркеры отражают координаты из конкретного матча.", color = Muted, fontSize = 9.sp)
             }
