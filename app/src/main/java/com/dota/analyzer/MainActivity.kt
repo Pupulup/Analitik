@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,7 +54,7 @@ private val GoldLine = Color(0xFFF0C36A)
 private val XpLine = Color(0xFF78A9E8)
 
 private enum class MatchTab(val title: String) {
-    OVERVIEW("Обзор"), PLAYERS("Игроки"), ANALYSIS("Анализ"), ECONOMY("Экономика"), ITEMS("Предметы")
+    OVERVIEW("Обзор"), PLAYERS("Игроки"), ANALYSIS("Анализ"), ECONOMY("Экономика"), ITEMS("Предметы"), MAP("Карта")
 }
 
 class MainActivity : ComponentActivity() {
@@ -214,6 +215,7 @@ private fun MatchWorkspace(
                 MatchTab.ANALYSIS -> AnalysisScreen(match, heroNames, heroImageNames, impacts)
                 MatchTab.ECONOMY -> EconomyScreen(match, heroNames, heroImageNames, impacts)
                 MatchTab.ITEMS -> ItemsScreen(match, heroNames, heroImageNames)
+                MatchTab.MAP -> MatchMapScreen(match)
             }
         }
         NavigationBar(containerColor = Bg, tonalElevation = 0.dp) {
@@ -224,6 +226,7 @@ private fun MatchWorkspace(
                     MatchTab.ANALYSIS -> Icons.Default.Analytics
                     MatchTab.ECONOMY -> Icons.Default.MonetizationOn
                     MatchTab.ITEMS -> Icons.Default.Inventory2
+                    MatchTab.MAP -> Icons.Default.Map
                 }
                 NavigationBarItem(
                     selected = selectedTab == tab,
@@ -712,36 +715,66 @@ private fun AdvantageChart(
 private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
     val reports = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match) }
     CardBlock {
-        Text("КОМАНДНЫЕ БОИ И ПЕРЕЛОМНЫЕ МОМЕНТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
+        Text("КОМАНДНЫЕ БОИ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(5.dp))
         Text(com.dota.analyzer.data.MatchDeepAnalytics.turningPointSummary(match), color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
-        if (reports.isNotEmpty()) {
-            Spacer(Modifier.height(10.dp))
-            reports.forEachIndexed { index, fight ->
+    }
+    if (reports.isEmpty()) {
+        CardBlock {
+            Text("Подробная статистика боёв не получена", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Text("OpenDota может не иметь разобранного реплея для этого матча. Поэтому нельзя достоверно показать золото, смерти и урон по отдельным столкновениям.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+        }
+    } else {
+        reports.forEach { fight ->
+            CardBlock {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Бой ${fight.index}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(
+                        com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.start) + "–" +
+                            com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.end),
+                        color = Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text("СВЕТ", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text(fight.radiantDeaths?.let { "Смерти: $it" } ?: "Смерти: нет данных", color = Color.White, fontSize = 11.sp)
+                        Text(fight.radiantGoldDelta?.let { "Золото: ${signedCompact(it)}" } ?: "Золото: нет данных", color = Color.White, fontSize = 11.sp)
+                        Text(fight.radiantDamage?.let { "Урон: ${compactLong(it)}" } ?: "Урон: нет данных", color = Color.White, fontSize = 11.sp)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("ТЬМА", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text(fight.direDeaths?.let { "Смерти: $it" } ?: "Смерти: нет данных", color = Color.White, fontSize = 11.sp)
+                        Text(fight.direGoldDelta?.let { "Золото: ${signedCompact(it)}" } ?: "Золото: нет данных", color = Color.White, fontSize = 11.sp)
+                        Text(fight.direDamage?.let { "Урон: ${compactLong(it)}" } ?: "Урон: нет данных", color = Color.White, fontSize = 11.sp)
+                    }
+                }
+                Spacer(Modifier.height(7.dp))
                 val swing = fight.radiantSwing
-                val winner = when {
-                    swing > 0 -> "Сдвиг в пользу Света"
-                    swing < 0 -> "Сдвиг в пользу Тьмы"
-                    else -> "Без выраженного сдвига золота"
+                val outcome = when {
+                    swing == null -> "Преимущество по золоту определить нельзя"
+                    swing > 0 -> "По сумме изменений золота перевес у Света: ${compact(swing)}"
+                    swing < 0 -> "По сумме изменений золота перевес у Тьмы: ${compact(abs(swing))}"
+                    else -> "По сумме изменений золота равенство"
+                }
+                Text(outcome, color = if (swing == null) Muted else if (swing >= 0) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Участников: ${fight.participants}", color = Muted, fontSize = 10.sp)
+                    fight.buybacks?.let { Text("Выкупы: $it", color = Muted, fontSize = 10.sp) }
                 }
                 val topPlayer = match.players.firstOrNull { it.playerSlot == fight.topDamageSlot }
-                Column(Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("#${fight.index}  ${com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.start)}–${com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.end)}",
-                            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        Text("${fight.participants} участников", color = Muted, fontSize = 9.sp)
-                    }
-                    Text(winner, color = if (swing >= 0) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Золото: Свет ${signedCompact(fight.radiantGoldDelta)} · Тьма ${signedCompact(fight.direGoldDelta)}", color = Muted, fontSize = 10.sp)
-                    Text("Потери: Свет ${fight.radiantDeaths} · Тьма ${fight.direDeaths} · выкупы ${fight.buybacks}", color = Muted, fontSize = 10.sp)
-                    Text("Урон в бою: Свет ${compactLong(fight.radiantDamage)} · Тьма ${compactLong(fight.direDamage)}", color = Muted, fontSize = 10.sp)
-                    if (topPlayer != null) {
-                        val hero = heroNames[topPlayer.heroId] ?: "Герой #${topPlayer.heroId}"
-                        val playerLabel = topPlayer.personaName?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""
-                        Text("Больше всего урона: $hero$playerLabel", color = Accent, fontSize = 10.sp)
-                    }
+                if (topPlayer != null) {
+                    val hero = heroNames[topPlayer.heroId] ?: "Герой #${topPlayer.heroId}"
+                    val nickname = topPlayer.personaName?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""
+                    Text("Лидер по урону: $hero$nickname", color = Accent, fontSize = 10.sp)
                 }
-                if (index != reports.lastIndex) HorizontalDivider(color = Color(0xFF2A3443))
+                if (fight.radiantGoldDelta == null || fight.direGoldDelta == null ||
+                    fight.radiantDeaths == null || fight.direDeaths == null ||
+                    fight.radiantDamage == null || fight.direDamage == null
+                ) {
+                    Text("Часть статистики боя отсутствует в исходных данных.", color = Muted, fontSize = 9.sp)
+                }
             }
         }
     }
@@ -750,21 +783,103 @@ private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
 @Composable
 private fun ObjectiveAnalysis(match: Match, heroNames: Map<Int, String>) {
     val objectives = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.objectives(match) }
-    if (objectives.isEmpty()) return
     CardBlock {
-        Text("КОНТРОЛЬ КАРТЫ И ОБЪЕКТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Text("События, которые OpenDota смог определить по реплею.", color = Muted, fontSize = 10.sp)
-        objectives.forEach { event ->
-            val player = match.players.firstOrNull { it.playerSlot == event.playerSlot }
-            val sideColor = when (event.isRadiant) { true -> Radiant; false -> Dire; null -> Muted }
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(event.time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(48.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(event.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    val actor = player?.let { heroNames[it.heroId] ?: "Герой #${it.heroId}" }
-                    val actorLabel = if (actor != null) "$actor · ${if (player?.isRadiant == true) "Свет" else "Тьма"}" else event.detail
-                    Text(actorLabel, color = sideColor, fontSize = 9.sp)
+        Text("КЛЮЧЕВЫЕ ОБЪЕКТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        if (objectives.isEmpty()) {
+            Text("События по Рошану и строениям не переданы OpenDota для этого матча.", color = Muted, fontSize = 11.sp)
+        } else {
+            objectives.forEach { event ->
+                val player = match.players.firstOrNull { it.playerSlot == event.playerSlot }
+                val sideColor = when (event.isRadiant) { true -> Radiant; false -> Dire; null -> Muted }
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(event.time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(48.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(event.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        val actor = player?.let { heroNames[it.heroId] ?: "Герой #${it.heroId}" }
+                        val team = when (event.isRadiant) { true -> "Свет"; false -> "Тьма"; null -> null }
+                        Text(listOfNotNull(actor, team).joinToString(" · ").ifBlank { event.detail }, color = sideColor, fontSize = 9.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MatchMapScreen(match: Match) {
+    val wards = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.wardPlacements(match) }
+    val durationMinutes = (match.duration / 60f).coerceAtLeast(1f)
+    var selectedMinute by remember(match.matchId) { mutableFloatStateOf(durationMinutes) }
+    val visibleWards = wards.filter { it.time <= selectedMinute * 60f }
+    val observerCount = visibleWards.count { it.isObserver }
+    val sentryCount = visibleWards.count { !it.isObserver }
+    val objectives = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.objectives(match) }
+    val fightEvents = remember(match) {
+        com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match).map {
+            it.start to "Командный бой ${it.index}"
+        }
+    }
+    val eventFeed = (objectives.map { it.time to it.title } + fightEvents).sortedBy { it.first }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        item {
+            CardBlock {
+                Text("КАРТА МАТЧА", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("Расположение Observer и Sentry Ward по данным реплея", color = Muted, fontSize = 11.sp)
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))) {
+                    AsyncImage(
+                        model = "https://raw.githubusercontent.com/odota/web/master/public/assets/images/dota2/map/detailed_740.jpg",
+                        contentDescription = "Миникарта Dota 2",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds
+                    )
+                    Canvas(Modifier.matchParentSize()) {
+                        visibleWards.forEach { ward ->
+                            val x = (ward.x.coerceIn(0, 255) / 255f) * size.width
+                            val y = (1f - ward.y.coerceIn(0, 255) / 255f) * size.height
+                            val color = if (ward.isObserver) Color(0xFFFFD36A) else Color(0xFF72D7E8)
+                            drawCircle(color = Color.Black.copy(alpha = 0.8f), radius = 7.dp.toPx(), center = Offset(x, y))
+                            drawCircle(color = color, radius = 4.5.dp.toPx(), center = Offset(x, y))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("● Observer: $observerCount", color = Color(0xFFFFD36A), fontSize = 10.sp)
+                    Text("● Sentry: $sentryCount", color = Color(0xFF72D7E8), fontSize = 10.sp)
+                }
+                Text("Время: ${selectedMinute.toInt()} мин. / ${durationMinutes.toInt()} мин.", color = Color.White, fontSize = 11.sp)
+                Slider(
+                    value = selectedMinute,
+                    onValueChange = { selectedMinute = it },
+                    valueRange = 0f..durationMinutes,
+                    colors = SliderDefaults.colors(thumbColor = Accent, activeTrackColor = Accent)
+                )
+                if (wards.isEmpty()) {
+                    Text("OpenDota не передала координаты установки вардов. Карта останется без маркеров — это не означает, что обзор отсутствовал.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                } else {
+                    Text("Показаны точки установки до выбранной минуты. Координаты взяты из ward logs; положение боёв и объектов не дорисовывается.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                }
+                Text("Подложка карты 7.40; маркеры отражают координаты из конкретного матча.", color = Muted, fontSize = 9.sp)
+            }
+        }
+        item {
+            CardBlock {
+                Text("СОБЫТИЯ МАТЧА", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                if (eventFeed.isEmpty()) {
+                    Text("Нет временных меток командных боёв и объектов.", color = Muted, fontSize = 11.sp)
+                } else {
+                    eventFeed.forEach { (time, title) ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(52.dp))
+                            Text(title, color = Color.White, fontSize = 11.sp)
+                        }
+                    }
                 }
             }
         }
