@@ -17,6 +17,7 @@ data class Match(
 
 data class Player(
     @SerializedName("account_id") val accountId: Long? = null,
+    @SerializedName("personaname") val personaName: String? = null,
     @SerializedName("player_slot") val playerSlot: Int = 0,
     @SerializedName("hero_id") val heroId: Int = 0,
     @SerializedName("kills") val kills: Int = 0,
