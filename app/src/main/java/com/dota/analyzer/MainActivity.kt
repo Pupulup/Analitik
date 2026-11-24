@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,7 +59,7 @@ private val GoldLine = Color(0xFFF0C36A)
 private val XpLine = Color(0xFF78A9E8)
 
 private enum class MatchTab(val title: String) {
-    OVERVIEW("Обзор"), PLAYERS("Игроки"), ANALYSIS("Анализ"), ECONOMY("Экономика"), ITEMS("Предметы"), MAP("Карта")
+    OVERVIEW("Обзор"), PLAYERS("Игроки"), ANALYSIS("Анализ"), ECONOMY("Экономика"), ITEMS("Предметы"), MAP("Карта"), PROFILE("Профиль"), GUIDES("Гайды")
 }
 
 class MainActivity : ComponentActivity() {
@@ -219,6 +221,8 @@ private fun MatchWorkspace(
                 MatchTab.ECONOMY -> EconomyScreen(match, heroNames, heroImageNames, impacts)
                 MatchTab.ITEMS -> ItemsScreen(match, heroNames, heroImageNames)
                 MatchTab.MAP -> MatchMapScreen(match)
+                MatchTab.PROFILE -> PlayerProfileScreen()
+                MatchTab.GUIDES -> HeroGuidesScreen()
             }
         }
         NavigationBar(containerColor = Bg, tonalElevation = 0.dp) {
@@ -230,6 +234,8 @@ private fun MatchWorkspace(
                     MatchTab.ECONOMY -> Icons.Default.MonetizationOn
                     MatchTab.ITEMS -> Icons.Default.Inventory2
                     MatchTab.MAP -> Icons.Default.Map
+                    MatchTab.PROFILE -> Icons.Default.Person
+                    MatchTab.GUIDES -> Icons.Default.MenuBook
                 }
                 NavigationBarItem(
                     selected = selectedTab == tab,
