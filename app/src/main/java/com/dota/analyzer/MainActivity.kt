@@ -24,11 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dota.analyzer.data.Match
 import com.dota.analyzer.data.MatchAnalytics
@@ -67,59 +69,117 @@ fun DotaAnalyzerApp(vm: MatchViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     var matchId by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(MatchTab.OVERVIEW) }
+    var showSearchPanel by remember { mutableStateOf(true) }
+
+    LaunchedEffect(state) {
+        if (state is MatchState.Success) showSearchPanel = false
+    }
+
     MaterialTheme(colorScheme = darkColorScheme(
         primary = Accent, background = Bg, surface = Panel,
         onBackground = Color.White, onSurface = Color.White
     )) {
         Surface(Modifier.fillMaxSize(), color = Bg) {
             Column(Modifier.fillMaxSize()) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                    Spacer(Modifier.height(30.dp))
-                    Text("DOTA ANALYZER", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
-                    Text("Разбор матча", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                    Text("Статистика и аналитика Dota 2", color = Muted, fontSize = 12.sp)
-                    Spacer(Modifier.height(18.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = matchId,
-                            onValueChange = { matchId = it.filter(Char::isDigit) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("ID матча") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Accent, unfocusedBorderColor = Color(0xFF354052),
-                                focusedLabelColor = Accent, cursorColor = Accent
+                when (val current = state) {
+                    is MatchState.Success -> {
+                        if (showSearchPanel) {
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+                                Text("DOTA ANALYZER", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+                                Text("Найти другой матч", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(12.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OutlinedTextField(
+                                        value = matchId,
+                                        onValueChange = { matchId = it.filter(Char::isDigit) },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        label = { Text("ID матча") },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Accent, unfocusedBorderColor = Color(0xFF354052),
+                                            focusedLabelColor = Accent, cursorColor = Accent
+                                        )
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Button(onClick = { vm.loadMatch(matchId) }, shape = RoundedCornerShape(14.dp)) {
+                                        Icon(Icons.Default.Search, contentDescription = "Найти")
+                                    }
+                                }
+                                TextButton(onClick = { showSearchPanel = false }) {
+                                    Text("Вернуться к матчу #\${current.match.matchId}", color = Accent)
+                                }
+                            }
+                        } else {
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("DOTA ANALYZER", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                                    Text("Матч #\${current.match.matchId}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                }
+                                TextButton(onClick = { showSearchPanel = true }) {
+                                    Icon(Icons.Default.Search, contentDescription = null, tint = Accent)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Другой матч", color = Accent, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                        if (!showSearchPanel) {
+                            MatchWorkspace(
+                                match = current.match,
+                                heroNames = current.heroNames,
+                                heroImageNames = current.heroImageNames,
+                                selectedTab = selectedTab,
+                                onTabSelected = { selectedTab = it },
+                                modifier = Modifier.weight(1f)
                             )
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Button(
-                            onClick = { selectedTab = MatchTab.OVERVIEW; vm.loadMatch(matchId) },
-                            shape = RoundedCornerShape(14.dp),
-                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp)
-                        ) { Icon(Icons.Default.Search, contentDescription = "Найти матч") }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-                when (val s = state) {
-                    MatchState.Idle -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) { EmptyState() }
-                    MatchState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
-                    is MatchState.Error -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) {
-                        CardBlock {
-                            Text("Не удалось загрузить", color = Color(0xFFFF8585), fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(6.dp))
-                            Text(s.message, color = Muted)
+                        } else {
+                            Spacer(Modifier.weight(1f))
                         }
                     }
-                    is MatchState.Success -> {
-                        MatchWorkspace(
-                            match = s.match,
-                            heroNames = s.heroNames,
-                            selectedTab = selectedTab,
-                            onTabSelected = { selectedTab = it },
-                            modifier = Modifier.weight(1f)
-                        )
+                    else -> {
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                            Spacer(Modifier.height(30.dp))
+                            Text("DOTA ANALYZER", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 3.sp)
+                            Text("Разбор матча", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                            Text("Статистика и аналитика Dota 2", color = Muted, fontSize = 12.sp)
+                            Spacer(Modifier.height(18.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = matchId,
+                                    onValueChange = { matchId = it.filter(Char::isDigit) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    label = { Text("ID матча") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Accent, unfocusedBorderColor = Color(0xFF354052),
+                                        focusedLabelColor = Accent, cursorColor = Accent
+                                    )
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Button(onClick = { vm.loadMatch(matchId) }, shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Default.Search, contentDescription = "Найти матч")
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        when (current) {
+                            MatchState.Idle -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) { EmptyState() }
+                            MatchState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
+                            is MatchState.Error -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) {
+                                CardBlock {
+                                    Text("Не удалось загрузить", color = Color(0xFFFF8585), fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(current.message, color = Muted)
+                                }
+                            }
+                            else -> Unit
+                        }
                     }
                 }
             }
