@@ -362,7 +362,7 @@ private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, heroImageN
 }
 
 @Composable
-private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String) {
+private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String, heroImageName: String?, allPlayers: List<Player>) {
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
             HeroPortrait(heroImageName, Modifier.size(width = 64.dp, height = 44.dp))
@@ -381,6 +381,24 @@ private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String) {
         ImpactMetric("Объекты", impact.objectives)
         ImpactMetric("Добивания", impact.lastHits)
         ImpactMetric("Выживаемость", impact.survivability)
+        val teammates = allPlayers.filter { it.isRadiant == impact.player.isRadiant }
+        val avgGpm = teammates.map { it.gpm }.average().takeIf { !it.isNaN() } ?: 0.0
+        val avgDamage = teammates.map { it.heroDamage }.average().takeIf { !it.isNaN() } ?: 0.0
+        val player = impact.player
+        val observations = buildList {
+            if (player.gpm >= avgGpm * 1.15) add("экономика выше среднего по команде")
+            if (player.heroDamage >= avgDamage * 1.15) add("урон героям выше среднего по команде")
+            if ((player.teamfightParticipation ?: 0.0) >= 0.65) add("высокое участие в командных боях")
+            if ((player.roshanKills ?: 0) > 0 || (player.towerKills ?: 0) > 0) add("есть вклад в уничтожение объектов")
+            if (player.deaths >= 8) add("высокое число смертей")
+        }
+        Spacer(Modifier.height(10.dp))
+        Text("ЧТО ВИДНО ПО СТАТИСТИКЕ", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(
+            if (observations.isEmpty()) "Выраженных отклонений от командных показателей по доступным метрикам не выявлено."
+            else observations.joinToString("; ").replaceFirstChar { it.uppercase() } + ".",
+            color = Muted, fontSize = 11.sp, lineHeight = 16.sp
+        )
         if (impact.strengths.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             Text("Сильные стороны", color = Radiant, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -510,6 +528,8 @@ private fun PlayerCard(p: Player, heroName: String, heroImageName: String?, impa
     var expanded by remember(p.playerSlot, p.heroId) { mutableStateOf(false) }
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            HeroPortrait(heroImageName, Modifier.size(width = 64.dp, height = 44.dp))
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text("${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • ${impact?.roleName ?: MatchAnalytics.laneName(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
