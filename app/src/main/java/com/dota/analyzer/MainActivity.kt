@@ -395,29 +395,38 @@ private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String) {
 }
 
 @Composable
-private fun EconomyScreen(match: Match, impacts: List<PlayerImpact>) {
+private fun EconomyScreen(match: Match, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>, impacts: List<PlayerImpact>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
     ) {
         if (match.radiantGoldAdv.isNotEmpty()) {
-            item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ЗОЛОТУ", match.radiantGoldAdv, GoldLine, "Свет впереди", "Тьма впереди", "Разница накопленного золота команд") }
+            item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ЗОЛОТУ", match.radiantGoldAdv, GoldLine, "золота", "Свет впереди", "Тьма впереди") }
         }
         if (match.radiantXpAdv.isNotEmpty()) {
-            item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ОПЫТУ", match.radiantXpAdv, XpLine, "Свет впереди", "Тьма впереди", "Разница полученного опыта команд") }
+            item { AdvantageChart("ПРЕИМУЩЕСТВО ПО ОПЫТУ", match.radiantXpAdv, XpLine, "опыта", "Свет впереди", "Тьма впереди") }
         }
         item { TeamComparison(match, impacts) }
         item {
             CardBlock {
                 Text("ЭКОНОМИКА ИГРОКОВ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("В каждой строке указаны герой, команда и его личные показатели.", color = Muted, fontSize = 10.sp)
                 Spacer(Modifier.height(8.dp))
                 match.players.sortedByDescending { it.netWorth }.forEach { player ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (player.isRadiant) "С" else "Т", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(18.dp))
-                        Text("GPM ${player.gpm} · XPM ${player.xpm}", color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
-                        Text(compact(player.netWorth), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                        HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 54.dp, height = 34.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(if (player.isRadiant) "СВЕТ" else "ТЬМА", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("NW \${compact(player.netWorth)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("GPM \${player.gpm} · XPM \${player.xpm}", color = Muted, fontSize = 9.sp)
+                        }
                     }
+                    HorizontalDivider(color = Color(0xFF2A3443))
                 }
             }
         }
