@@ -637,18 +637,41 @@ private fun AdvantageChart(
     title: String,
     values: List<Int>,
     lineColor: Color,
+    unitLabel: String,
     positiveLabel: String,
-    negativeLabel: String,
-    description: String
+    negativeLabel: String
 ) {
+    val peakPositive = values.indices.maxByOrNull { values[it] }
+    val peakNegative = values.indices.minByOrNull { values[it] }
+    val finalValue = values.lastOrNull() ?: 0
+    val peakPositiveValue = peakPositive?.let { values[it] } ?: 0
+    val peakNegativeValue = peakNegative?.let { values[it] } ?: 0
     CardBlock {
         Text(title, color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
         Spacer(Modifier.height(8.dp))
         if (values.size < 2) {
             Text("Недостаточно точек для построения графика.", color = Muted, fontSize = 11.sp)
         } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("ПИК СВЕТА", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("\${signedCompact(peakPositiveValue)} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("на \${peakPositive ?: 0} мин.", color = Muted, fontSize = 9.sp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("ПИК ТЬМЫ", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("\${compact(abs(peakNegativeValue))} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("на \${peakNegative ?: 0} мин.", color = Muted, fontSize = 9.sp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("К КОНЦУ", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text(if (finalValue >= 0) "Свет +\${compact(finalValue)}" else "Тьма +\${compact(abs(finalValue))}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(unitLabel, color = Muted, fontSize = 9.sp)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
             val maxAbs = values.maxOf { abs(it.toLong()) }.toFloat().coerceAtLeast(1f)
-            Canvas(Modifier.fillMaxWidth().height(130.dp)) {
+            Canvas(Modifier.fillMaxWidth().height(140.dp)) {
                 val midY = size.height / 2f
                 drawLine(Color(0xFF596477), Offset(0f, midY), Offset(size.width, midY), strokeWidth = 1.dp.toPx())
                 val path = Path()
@@ -660,13 +683,94 @@ private fun AdvantageChart(
                 drawPath(path, lineColor, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5.dp.toPx()))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("0 мин.", color = Muted, fontSize = 9.sp)
+                Text("\${values.lastIndex / 4} мин.", color = Muted, fontSize = 9.sp)
+                Text("\${values.lastIndex / 2} мин.", color = Muted, fontSize = 9.sp)
+                Text("\${(values.lastIndex * 3) / 4} мин.", color = Muted, fontSize = 9.sp)
+                Text("\${values.lastIndex} мин.", color = Muted, fontSize = 9.sp)
+            }
+            Spacer(Modifier.height(7.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(positiveLabel, color = Radiant, fontSize = 9.sp)
                 Text(negativeLabel, color = Dire, fontSize = 9.sp)
             }
-            Text(description, color = Muted, fontSize = 9.sp)
+            Text("Выше нуля — преимущество Света, ниже нуля — преимущество Тьмы.", color = Muted, fontSize = 9.sp, lineHeight = 13.sp)
         }
     }
 }
+
+@Composable
+private fun MatchFlowInsights(match: Match) {
+    val gold = match.radiantGoldAdv
+    val xp = match.radiantXpAdv
+    val maxGold = gold.maxOrNull() ?: 0
+    val minGold = gold.minOrNull() ?: 0
+    val maxXp = xp.maxOrNull() ?: 0
+    val minXp = xp.minOrNull() ?: 0
+    val goldPeakMinute = gold.indexOf(maxGold)
+    val goldLowMinute = gold.indexOf(minGold)
+    val currentGold = gold.lastOrNull()
+    CardBlock {
+        Text("КАК МЕНЯЛОСЬ ПРЕИМУЩЕСТВО", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        if (gold.isNotEmpty()) {
+            Text("Максимальное преимущество Света по золоту: \${signedCompact(maxGold)} на \${goldPeakMinute} мин.", color = Radiant, fontSize = 11.sp)
+            Text("Максимальное преимущество Тьмы по золоту: \${compact(abs(minGold))} на \${goldLowMinute} мин.", color = Dire, fontSize = 11.sp)
+            Text(
+                "К концу матча: \${currentGold?.let { if (it >= 0) "Свет +\${compact(it)}" else "Тьма +\${compact(abs(it))}" } ?: "нет данных"}.",
+                color = Color.White, fontSize = 11.sp
+            )
+        } else {
+            Text("График преимущества по золоту отсутствует в данных матча.", color = Muted, fontSize = 11.sp)
+        }
+        if (xp.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Максимальная разница по опыту: \${compact(maxOf(abs(maxXp), abs(minXp)))} в пользу \${if (abs(maxXp) >= abs(minXp)) "Света" else "Тьмы"}.",
+                color = Muted, fontSize = 10.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroPortrait(imageName: String?, modifier: Modifier = Modifier) {
+    if (imageName.isNullOrBlank()) {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Text("DOTA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+        }
+    } else {
+        AsyncImage(
+            model = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/$imageName.png",
+            contentDescription = "Портрет героя",
+            modifier = modifier,
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
+private fun ItemArtwork(itemName: String, modifier: Modifier = Modifier) {
+    AsyncImage(
+        model = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/$itemName.png",
+        contentDescription = humanizeItem(itemName),
+        modifier = modifier,
+        contentScale = ContentScale.Fit
+    )
+}
+
+private fun humanizeItem(key: String): String =
+    key.split('_').joinToString(" ") { part ->
+        when (part) {
+            "aghanims" -> "Aghanim's"
+            "shard" -> "Shard"
+            "scepter" -> "Scepter"
+            else -> part.replaceFirstChar { it.uppercase() }
+        }
+    }
+
+private fun signedCompact(value: Int): String =
+    if (value >= 0) "+\${compact(value)}" else "-\${compact(abs(value))}"
 
 @Composable
 private fun Stat(label: String, value: String) {
