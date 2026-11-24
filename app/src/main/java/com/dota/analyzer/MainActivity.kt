@@ -172,19 +172,28 @@ fun DotaAnalyzerApp(vm: MatchViewModel) {
                                     Icon(Icons.Default.Search, contentDescription = "Найти матч")
                                 }
                             }
-                            Spacer(Modifier.height(12.dp))
-                        }
-                        when (current) {
-                            MatchState.Idle -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) { EmptyState() }
-                            MatchState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
-                            is MatchState.Error -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) {
-                                CardBlock {
-                                    Text("Не удалось загрузить", color = Color(0xFFFF8585), fontWeight = FontWeight.Bold)
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(current.message, color = Muted)
-                                }
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { selectedTab = MatchTab.OVERVIEW }) { Text("Матч", color = Accent) }
+                                TextButton(onClick = { selectedTab = MatchTab.PROFILE }) { Text("Профиль", color = Accent) }
+                                TextButton(onClick = { selectedTab = MatchTab.GUIDES }) { Text("Гайды", color = Accent) }
                             }
-                            else -> Unit
+                        }
+                        when (selectedTab) {
+                            MatchTab.PROFILE -> Box(Modifier.weight(1f).fillMaxWidth()) { PlayerProfileScreen() }
+                            MatchTab.GUIDES -> Box(Modifier.weight(1f).fillMaxWidth()) { HeroGuidesScreen() }
+                            else -> when (current) {
+                                MatchState.Idle -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) { EmptyState() }
+                                MatchState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
+                                is MatchState.Error -> Box(Modifier.weight(1f).fillMaxWidth().padding(20.dp), contentAlignment = Alignment.TopCenter) {
+                                    CardBlock {
+                                        Text("Не удалось загрузить", color = Color(0xFFFF8585), fontWeight = FontWeight.Bold)
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(current.message, color = Muted)
+                                    }
+                                }
+                                else -> Unit
+                            }
                         }
                     }
                 }
