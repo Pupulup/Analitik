@@ -661,17 +661,17 @@ private fun AdvantageChart(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text("ПИК СВЕТА", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("${signedCompact(peakPositiveValue)} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(if (peakPositiveValue > 0) "${signedCompact(peakPositiveValue)} $unitLabel" else "Нет преимущества", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text("на ${peakPositive ?: 0} мин.", color = Muted, fontSize = 9.sp)
                 }
                 Column(Modifier.weight(1f)) {
                     Text("ПИК ТЬМЫ", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("${compact(abs(peakNegativeValue))} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(if (peakNegativeValue < 0) "${compact(abs(peakNegativeValue))} $unitLabel" else "Нет преимущества", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text("на ${peakNegative ?: 0} мин.", color = Muted, fontSize = 9.sp)
                 }
                 Column(Modifier.weight(1f)) {
                     Text("К КОНЦУ", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text(if (finalValue >= 0) "Свет +${compact(finalValue)}" else "Тьма +${compact(abs(finalValue))}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(if (finalValue > 0) "Свет +${compact(finalValue)}" else if (finalValue < 0) "Тьма +${compact(abs(finalValue))}" else "Равенство", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text(unitLabel, color = Muted, fontSize = 9.sp)
                 }
             }
@@ -720,10 +720,10 @@ private fun MatchFlowInsights(match: Match) {
         Text("КАК МЕНЯЛОСЬ ПРЕИМУЩЕСТВО", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         if (gold.isNotEmpty()) {
-            Text("Максимальное преимущество Света по золоту: ${signedCompact(maxGold)} на ${goldPeakMinute} мин.", color = Radiant, fontSize = 11.sp)
-            Text("Максимальное преимущество Тьмы по золоту: ${compact(abs(minGold))} на ${goldLowMinute} мин.", color = Dire, fontSize = 11.sp)
+            Text(if (maxGold > 0) "Максимальное преимущество Света по золоту: ${signedCompact(maxGold)} на ${goldPeakMinute} мин." else "Свет не получал преимущества по золоту.", color = Radiant, fontSize = 11.sp)
+            Text(if (minGold < 0) "Максимальное преимущество Тьмы по золоту: ${compact(abs(minGold))} на ${goldLowMinute} мин." else "Тьма не получала преимущества по золоту.", color = Dire, fontSize = 11.sp)
             Text(
-                "К концу матча: ${currentGold?.let { if (it >= 0) "Свет +${compact(it)}" else "Тьма +${compact(abs(it))}" } ?: "нет данных"}.",
+                "К концу матча: ${currentGold?.let { if (it > 0) "Свет +${compact(it)}" else if (it < 0) "Тьма +${compact(abs(it))}" else "равенство" } ?: "нет данных"}.",
                 color = Color.White, fontSize = 11.sp
             )
         } else {
