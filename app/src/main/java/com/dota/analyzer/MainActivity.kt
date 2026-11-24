@@ -737,7 +737,8 @@ private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
                     Text("Урон в бою: Свет ${compactLong(fight.radiantDamage)} · Тьма ${compactLong(fight.direDamage)}", color = Muted, fontSize = 10.sp)
                     if (topPlayer != null) {
                         val hero = heroNames[topPlayer.heroId] ?: "Герой #${topPlayer.heroId}"
-                        Text("Больше всего урона: $hero${topPlayer.personaName?.let { " · $it" } ?: ""}", color = Accent, fontSize = 10.sp)
+                        val playerLabel = topPlayer.personaName?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""
+                        Text("Больше всего урона: $hero$playerLabel", color = Accent, fontSize = 10.sp)
                     }
                 }
                 if (index != reports.lastIndex) HorizontalDivider(color = Color(0xFF2A3443))
