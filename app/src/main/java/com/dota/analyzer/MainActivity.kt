@@ -146,6 +146,15 @@ private fun MatchWorkspace(
 ) {
     val impacts = remember(match) { MatchAnalytics.analyze(match.players) }
     Column(modifier.fillMaxWidth()) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            when (selectedTab) {
+                MatchTab.OVERVIEW -> OverviewScreen(match, heroNames, impacts)
+                MatchTab.PLAYERS -> PlayersScreen(match, heroNames, impacts)
+                MatchTab.ANALYSIS -> AnalysisScreen(match, heroNames, impacts)
+                MatchTab.ECONOMY -> EconomyScreen(match, impacts)
+                MatchTab.ITEMS -> ItemsScreen(match, heroNames)
+            }
+        }
         NavigationBar(containerColor = Bg, tonalElevation = 0.dp) {
             MatchTab.values().forEach { tab ->
                 val icon = when (tab) {
@@ -169,13 +178,6 @@ private fun MatchWorkspace(
                     )
                 )
             }
-        }
-        when (selectedTab) {
-            MatchTab.OVERVIEW -> OverviewScreen(match, heroNames, impacts)
-            MatchTab.PLAYERS -> PlayersScreen(match, heroNames, impacts)
-            MatchTab.ANALYSIS -> AnalysisScreen(match, heroNames, impacts)
-            MatchTab.ECONOMY -> EconomyScreen(match, impacts)
-            MatchTab.ITEMS -> ItemsScreen(match, heroNames)
         }
     }
 }
