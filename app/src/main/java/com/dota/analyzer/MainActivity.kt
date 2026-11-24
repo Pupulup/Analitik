@@ -108,7 +108,7 @@ fun DotaAnalyzerApp(vm: MatchViewModel) {
                                     }
                                 }
                                 TextButton(onClick = { showSearchPanel = false }) {
-                                    Text("Вернуться к матчу #\${current.match.matchId}", color = Accent)
+                                    Text("Вернуться к матчу #${current.match.matchId}", color = Accent)
                                 }
                             }
                         } else {
@@ -118,7 +118,7 @@ fun DotaAnalyzerApp(vm: MatchViewModel) {
                             ) {
                                 Column(Modifier.weight(1f)) {
                                     Text("DOTA ANALYZER", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                                    Text("Матч #\${current.match.matchId}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    Text("Матч #${current.match.matchId}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 }
                                 TextButton(onClick = { showSearchPanel = true }) {
                                     Icon(Icons.Default.Search, contentDescription = null, tint = Accent)
@@ -300,7 +300,7 @@ private fun TeamRosterLine(title: String, players: List<Player>, heroNames: Map<
         Row(Modifier.fillMaxWidth().padding(top = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 52.dp, height = 30.dp))
             Spacer(Modifier.width(9.dp))
-            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 12.sp)
+            Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp)
         }
     }
 }
@@ -436,12 +436,12 @@ private fun EconomyScreen(match: Match, heroNames: Map<Int, String>, heroImageNa
                         HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 54.dp, height = 34.dp))
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                             Text(if (player.isRadiant) "СВЕТ" else "ТЬМА", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("NW \${compact(player.netWorth)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text("GPM \${player.gpm} · XPM \${player.xpm}", color = Muted, fontSize = 9.sp)
+                            Text("NW ${compact(player.netWorth)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("GPM ${player.gpm} · XPM ${player.xpm}", color = Muted, fontSize = 9.sp)
                         }
                     }
                     HorizontalDivider(color = Color(0xFF2A3443))
@@ -483,8 +483,8 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>, heroImageName
                         HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 62.dp, height = 42.dp))
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text("\${if (player.isRadiant) "СВЕТ" else "ТЬМА"} · \${purchases.size} покупок", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
+                            Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("${if (player.isRadiant) "СВЕТ" else "ТЬМА"} · ${purchases.size} покупок", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
                         }
                         TextButton(onClick = { expanded = !expanded }) {
                             Text(if (expanded) "Свернуть" else "Показать", color = Accent, fontSize = 11.sp)
@@ -655,17 +655,17 @@ private fun AdvantageChart(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text("ПИК СВЕТА", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("\${signedCompact(peakPositiveValue)} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("на \${peakPositive ?: 0} мин.", color = Muted, fontSize = 9.sp)
+                    Text("${signedCompact(peakPositiveValue)} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("на ${peakPositive ?: 0} мин.", color = Muted, fontSize = 9.sp)
                 }
                 Column(Modifier.weight(1f)) {
                     Text("ПИК ТЬМЫ", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("\${compact(abs(peakNegativeValue))} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("на \${peakNegative ?: 0} мин.", color = Muted, fontSize = 9.sp)
+                    Text("${compact(abs(peakNegativeValue))} $unitLabel", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("на ${peakNegative ?: 0} мин.", color = Muted, fontSize = 9.sp)
                 }
                 Column(Modifier.weight(1f)) {
                     Text("К КОНЦУ", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text(if (finalValue >= 0) "Свет +\${compact(finalValue)}" else "Тьма +\${compact(abs(finalValue))}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(if (finalValue >= 0) "Свет +${compact(finalValue)}" else "Тьма +${compact(abs(finalValue))}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text(unitLabel, color = Muted, fontSize = 9.sp)
                 }
             }
@@ -684,10 +684,10 @@ private fun AdvantageChart(
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("0 мин.", color = Muted, fontSize = 9.sp)
-                Text("\${values.lastIndex / 4} мин.", color = Muted, fontSize = 9.sp)
-                Text("\${values.lastIndex / 2} мин.", color = Muted, fontSize = 9.sp)
-                Text("\${(values.lastIndex * 3) / 4} мин.", color = Muted, fontSize = 9.sp)
-                Text("\${values.lastIndex} мин.", color = Muted, fontSize = 9.sp)
+                Text("${values.lastIndex / 4} мин.", color = Muted, fontSize = 9.sp)
+                Text("${values.lastIndex / 2} мин.", color = Muted, fontSize = 9.sp)
+                Text("${(values.lastIndex * 3) / 4} мин.", color = Muted, fontSize = 9.sp)
+                Text("${values.lastIndex} мин.", color = Muted, fontSize = 9.sp)
             }
             Spacer(Modifier.height(7.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -714,10 +714,10 @@ private fun MatchFlowInsights(match: Match) {
         Text("КАК МЕНЯЛОСЬ ПРЕИМУЩЕСТВО", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         if (gold.isNotEmpty()) {
-            Text("Максимальное преимущество Света по золоту: \${signedCompact(maxGold)} на \${goldPeakMinute} мин.", color = Radiant, fontSize = 11.sp)
-            Text("Максимальное преимущество Тьмы по золоту: \${compact(abs(minGold))} на \${goldLowMinute} мин.", color = Dire, fontSize = 11.sp)
+            Text("Максимальное преимущество Света по золоту: ${signedCompact(maxGold)} на ${goldPeakMinute} мин.", color = Radiant, fontSize = 11.sp)
+            Text("Максимальное преимущество Тьмы по золоту: ${compact(abs(minGold))} на ${goldLowMinute} мин.", color = Dire, fontSize = 11.sp)
             Text(
-                "К концу матча: \${currentGold?.let { if (it >= 0) "Свет +\${compact(it)}" else "Тьма +\${compact(abs(it))}" } ?: "нет данных"}.",
+                "К концу матча: ${currentGold?.let { if (it >= 0) "Свет +${compact(it)}" else "Тьма +${compact(abs(it))}" } ?: "нет данных"}.",
                 color = Color.White, fontSize = 11.sp
             )
         } else {
@@ -726,7 +726,7 @@ private fun MatchFlowInsights(match: Match) {
         if (xp.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Text(
-                "Максимальная разница по опыту: \${compact(maxOf(abs(maxXp), abs(minXp)))} в пользу \${if (abs(maxXp) >= abs(minXp)) "Света" else "Тьмы"}.",
+                "Максимальная разница по опыту: ${compact(maxOf(abs(maxXp), abs(minXp)))} в пользу ${if (abs(maxXp) >= abs(minXp)) "Света" else "Тьмы"}.",
                 color = Muted, fontSize = 10.sp
             )
         }
@@ -770,7 +770,7 @@ private fun humanizeItem(key: String): String =
     }
 
 private fun signedCompact(value: Int): String =
-    if (value >= 0) "+\${compact(value)}" else "-\${compact(abs(value))}"
+    if (value >= 0) "+${compact(value)}" else "-${compact(abs(value))}"
 
 @Composable
 private fun Stat(label: String, value: String) {
