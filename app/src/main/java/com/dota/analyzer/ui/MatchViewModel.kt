@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import com.google.gson.JsonParseException
 
@@ -60,7 +61,11 @@ class MatchViewModel : ViewModel() {
                 in 500..599 -> "Сервер OpenDota временно недоступен (HTTP ${error.code()}). Попробуйте позже."
                 else -> "OpenDota вернул HTTP ${error.code()}: ${error.message()}"
             }
-            is SocketTimeoutException -> "OpenDota не ответил за отведённое время. Проверьте соединение и повторите попытку; если ошибка повторяется, возможно, сервис недоступен из вашей сети."
+            is SocketTimeoutException, is InterruptedIOException -> {
+                val phase = repository.lastFailureDiagnostic ?: "этап запроса определить не удалось"
+                "Таймаут при обращении к OpenDota (матч $matchId). Этап: $phase. " +
+                    "Проверьте API в браузере телефона: https://api.opendota.com/api/matches/$matchId"
+            }
             is IOException -> "Сетевая ошибка при обращении к OpenDota: ${error.localizedMessage ?: "соединение прервано"}"
             is JsonParseException -> "OpenDota вернул ответ, который приложение не смогло разобрать: ${error.localizedMessage ?: "ошибка JSON"}"
             else -> "Ошибка ${error.javaClass.simpleName}: ${error.localizedMessage ?: "подробности отсутствуют"}"
