@@ -715,18 +715,24 @@ private fun AdvantageChart(
 @Composable
 private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
     val reports = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match) }
-    CardBlock {
-        Text("КОМАНДНЫЕ БОИ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(5.dp))
-        Text(com.dota.analyzer.data.MatchDeepAnalytics.turningPointSummary(match), color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+    val usefulReports = reports.filter { fight ->
+        fight.radiantGoldDelta != null || fight.direGoldDelta != null ||
+            fight.radiantDeaths != null || fight.direDeaths != null ||
+            fight.radiantDamage != null || fight.direDamage != null ||
+            fight.buybacks != null || fight.topDamageSlot != null
     }
-    if (reports.isEmpty()) {
+    val summary = remember(match) {
+        com.dota.analyzer.data.MatchDeepAnalytics.turningPointSummary(match)
+    }
+    if (usefulReports.isNotEmpty()) {
         CardBlock {
-            Text("Подробная статистика боёв не получена", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-            Text("OpenDota может не иметь разобранного реплея для этого матча. Поэтому нельзя достоверно показать золото, смерти и урон по отдельным столкновениям.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+            Text("КОМАНДНЫЕ БОИ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            if (summary.isNotBlank()) {
+                Spacer(Modifier.height(5.dp))
+                Text(summary, color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+            }
         }
-    } else {
-        reports.forEach { fight ->
+        usefulReports.forEach { fight ->
             CardBlock {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Бой ${fight.index}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -737,44 +743,44 @@ private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text("СВЕТ", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(fight.radiantDeaths?.let { "Смерти: $it" } ?: "Смерти: нет данных", color = Color.White, fontSize = 11.sp)
-                        Text(fight.radiantGoldDelta?.let { "Золото: ${signedCompact(it)}" } ?: "Золото: нет данных", color = Color.White, fontSize = 11.sp)
-                        Text(fight.radiantDamage?.let { "Урон: ${compactLong(it)}" } ?: "Урон: нет данных", color = Color.White, fontSize = 11.sp)
+                val hasRadiant = fight.radiantDeaths != null || fight.radiantGoldDelta != null || fight.radiantDamage != null
+                val hasDire = fight.direDeaths != null || fight.direGoldDelta != null || fight.direDamage != null
+                if (hasRadiant || hasDire) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (hasRadiant) {
+                            Column(Modifier.weight(1f)) {
+                                Text("СВЕТ", color = Radiant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                fight.radiantDeaths?.let { Text("Смерти: $it", color = Color.White, fontSize = 11.sp) }
+                                fight.radiantGoldDelta?.let { Text("Золото: ${signedCompact(it)}", color = Color.White, fontSize = 11.sp) }
+                                fight.radiantDamage?.let { Text("Урон: ${compactLong(it)}", color = Color.White, fontSize = 11.sp) }
+                            }
+                        }
+                        if (hasDire) {
+                            Column(Modifier.weight(1f)) {
+                                Text("ТЬМА", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                fight.direDeaths?.let { Text("Смерти: $it", color = Color.White, fontSize = 11.sp) }
+                                fight.direGoldDelta?.let { Text("Золото: ${signedCompact(it)}", color = Color.White, fontSize = 11.sp) }
+                                fight.direDamage?.let { Text("Урон: ${compactLong(it)}", color = Color.White, fontSize = 11.sp) }
+                            }
+                        }
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text("ТЬМА", color = Dire, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(fight.direDeaths?.let { "Смерти: $it" } ?: "Смерти: нет данных", color = Color.White, fontSize = 11.sp)
-                        Text(fight.direGoldDelta?.let { "Золото: ${signedCompact(it)}" } ?: "Золото: нет данных", color = Color.White, fontSize = 11.sp)
-                        Text(fight.direDamage?.let { "Урон: ${compactLong(it)}" } ?: "Урон: нет данных", color = Color.White, fontSize = 11.sp)
+                }
+                fight.radiantSwing?.let { swing ->
+                    val outcome = when {
+                        swing > 0 -> "Перевес по изменению золота у Света: ${compact(swing)}"
+                        swing < 0 -> "Перевес по изменению золота у Тьмы: ${compact(abs(swing))}"
+                        else -> "Изменение золота одинаковое"
                     }
+                    Text(outcome, color = if (swing >= 0) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.height(7.dp))
-                val swing = fight.radiantSwing
-                val outcome = when {
-                    swing == null -> "Преимущество по золоту определить нельзя"
-                    swing > 0 -> "По сумме изменений золота перевес у Света: ${compact(swing)}"
-                    swing < 0 -> "По сумме изменений золота перевес у Тьмы: ${compact(abs(swing))}"
-                    else -> "По сумме изменений золота равенство"
-                }
-                Text(outcome, color = if (swing == null) Muted else if (swing >= 0) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Участников: ${fight.participants}", color = Muted, fontSize = 10.sp)
-                    fight.buybacks?.let { Text("Выкупы: $it", color = Muted, fontSize = 10.sp) }
-                }
-                val topPlayer = match.players.firstOrNull { it.playerSlot == fight.topDamageSlot }
-                if (topPlayer != null) {
-                    val hero = heroNames[topPlayer.heroId] ?: "Герой #${topPlayer.heroId}"
-                    val nickname = topPlayer.personaName?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""
+                val topPlayer = fight.topDamageSlot?.let { slot -> match.players.firstOrNull { it.playerSlot == slot } }
+                topPlayer?.let { player ->
+                    val hero = heroNames[player.heroId] ?: "Герой #${player.heroId}"
+                    val nickname = player.personaName?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     Text("Лидер по урону: $hero$nickname", color = Accent, fontSize = 10.sp)
                 }
-                if (fight.radiantGoldDelta == null || fight.direGoldDelta == null ||
-                    fight.radiantDeaths == null || fight.direDeaths == null ||
-                    fight.radiantDamage == null || fight.direDamage == null
-                ) {
-                    Text("Часть статистики боя отсутствует в исходных данных.", color = Muted, fontSize = 9.sp)
+                fight.buybacks?.takeIf { it > 0 }?.let {
+                    Text("Выкупы: $it", color = Muted, fontSize = 10.sp)
                 }
             }
         }
@@ -784,11 +790,9 @@ private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
 @Composable
 private fun ObjectiveAnalysis(match: Match, heroNames: Map<Int, String>) {
     val objectives = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.objectives(match) }
-    CardBlock {
-        Text("КЛЮЧЕВЫЕ ОБЪЕКТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        if (objectives.isEmpty()) {
-            Text("События по Рошану и строениям не переданы OpenDota для этого матча.", color = Muted, fontSize = 11.sp)
-        } else {
+    if (objectives.isNotEmpty()) {
+        CardBlock {
+            Text("КЛЮЧЕВЫЕ ОБЪЕКТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             objectives.forEach { event ->
                 val player = match.players.firstOrNull { it.playerSlot == event.playerSlot }
                 val sideColor = when (event.isRadiant) { true -> Radiant; false -> Dire; null -> Muted }
@@ -798,7 +802,8 @@ private fun ObjectiveAnalysis(match: Match, heroNames: Map<Int, String>) {
                         Text(event.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         val actor = player?.let { heroNames[it.heroId] ?: "Герой #${it.heroId}" }
                         val team = when (event.isRadiant) { true -> "Свет"; false -> "Тьма"; null -> null }
-                        Text(listOfNotNull(actor, team).joinToString(" · ").ifBlank { event.detail }, color = sideColor, fontSize = 9.sp)
+                        val attribution = listOfNotNull(actor, team).joinToString(" · ")
+                        if (attribution.isNotBlank()) Text(attribution, color = sideColor, fontSize = 9.sp)
                     }
                 }
             }
@@ -809,77 +814,66 @@ private fun ObjectiveAnalysis(match: Match, heroNames: Map<Int, String>) {
 @Composable
 private fun MatchMapScreen(match: Match) {
     val wards = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.wardPlacements(match) }
-    val durationMinutes = (match.duration / 60f).coerceAtLeast(1f)
+    val durationMinutes = (match.duration.coerceAtLeast(60) / 60f).coerceAtLeast(1f)
     var selectedMinute by remember(match.matchId) { mutableFloatStateOf(durationMinutes) }
-    val visibleWards = wards.filter { it.time <= selectedMinute * 60f }
+    val safeMinute = selectedMinute.coerceIn(0f, durationMinutes)
+    val visibleWards = wards.filter { it.time >= 0 && it.time <= safeMinute * 60f }
     val observerCount = visibleWards.count { it.isObserver }
     val sentryCount = visibleWards.count { !it.isObserver }
     val objectives = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.objectives(match) }
     val fightEvents = remember(match) {
-        com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match).map {
-            it.start to "Командный бой ${it.index}"
-        }
+        com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match).map { it.start to "Командный бой ${it.index}" }
     }
-    val eventFeed = (objectives.map { it.time to it.title } + fightEvents).filter { it.first <= selectedMinute * 60f }.sortedBy { it.first }
+    val eventFeed = (objectives.map { it.time to it.title } + fightEvents)
+        .filter { it.first >= 0 && it.first <= safeMinute * 60f }
+        .sortedBy { it.first }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(16.dp)
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            CardBlock {
-                Text("КАРТА МАТЧА", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("Расположение Observer и Sentry Ward по данным реплея", color = Muted, fontSize = 11.sp)
-                Spacer(Modifier.height(8.dp))
-                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))) {
-                    AsyncImage(
-                        model = "https://raw.githubusercontent.com/odota/web/master/public/assets/images/dota2/map/detailed_740.jpg",
-                        contentDescription = "Миникарта Dota 2",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.FillBounds
-                    )
-                    Canvas(Modifier.matchParentSize()) {
-                        visibleWards.forEach { ward ->
-                            val x = ((ward.x - 64).coerceIn(0, 128) / 128f) * size.width
-                            val y = (1f - (ward.y - 64).coerceIn(0, 128) / 128f) * size.height
-                            val color = if (ward.isObserver) Color(0xFFFFD36A) else Color(0xFF72D7E8)
-                            drawCircle(color = Color.Black.copy(alpha = 0.8f), radius = 7.dp.toPx(), center = Offset(x, y))
-                            drawCircle(color = color, radius = 4.5.dp.toPx(), center = Offset(x, y))
-                        }
+        CardBlock {
+            Text("КАРТА МАТЧА", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))) {
+                AsyncImage(
+                    model = "https://raw.githubusercontent.com/odota/web/master/public/assets/images/dota2/map/detailed_740.jpg",
+                    contentDescription = "Миникарта Dota 2",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+                Canvas(Modifier.matchParentSize()) {
+                    visibleWards.forEach { ward ->
+                        val x = ((ward.x - 64).coerceIn(0, 128) / 128f) * size.width
+                        val y = (1f - (ward.y - 64).coerceIn(0, 128) / 128f) * size.height
+                        val color = if (ward.isObserver) Color(0xFFFFD36A) else Color(0xFF72D7E8)
+                        drawCircle(color = Color.Black.copy(alpha = 0.8f), radius = 7.dp.toPx(), center = Offset(x, y))
+                        drawCircle(color = color, radius = 4.5.dp.toPx(), center = Offset(x, y))
                     }
                 }
+            }
+            if (wards.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Text("● Observer: $observerCount", color = Color(0xFFFFD36A), fontSize = 10.sp)
                     Text("● Sentry: $sentryCount", color = Color(0xFF72D7E8), fontSize = 10.sp)
                 }
-                Text("Время: ${selectedMinute.toInt()} мин. / ${durationMinutes.toInt()} мин.", color = Color.White, fontSize = 11.sp)
+                Text("Время: ${safeMinute.toInt()} мин. / ${durationMinutes.toInt()} мин.", color = Color.White, fontSize = 11.sp)
                 Slider(
-                    value = selectedMinute,
-                    onValueChange = { selectedMinute = it },
+                    value = safeMinute,
+                    onValueChange = { selectedMinute = it.coerceIn(0f, durationMinutes) },
                     valueRange = 0f..durationMinutes,
                     colors = SliderDefaults.colors(thumbColor = Accent, activeTrackColor = Accent)
                 )
-                if (wards.isEmpty()) {
-                    Text("OpenDota не передала координаты установки вардов. Карта останется без маркеров — это не означает, что обзор отсутствовал.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
-                } else {
-                    Text("Показаны точки установки до выбранной минуты. Координаты OpenDota приведены к диапазону карты 64–192; положение боёв и объектов не дорисовывается.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
-                }
-                Text("Подложка карты 7.40; маркеры отражают координаты из конкретного матча.", color = Muted, fontSize = 9.sp)
             }
         }
-        item {
+        if (eventFeed.isNotEmpty()) {
             CardBlock {
                 Text("СОБЫТИЯ МАТЧА", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                if (eventFeed.isEmpty()) {
-                    Text("Нет временных меток командных боёв и объектов.", color = Muted, fontSize = 11.sp)
-                } else {
-                    eventFeed.forEach { (time, title) ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(52.dp))
-                            Text(title, color = Color.White, fontSize = 11.sp)
-                        }
+                eventFeed.forEach { (time, title) ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(52.dp))
+                        Text(title, color = Color.White, fontSize = 11.sp)
                     }
                 }
             }
