@@ -8,8 +8,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.Proxy
-import java.net.SocketAddress
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -53,7 +53,7 @@ class MatchRepository {
 
                 override fun connectStart(
                     call: Call,
-                    inetSocketAddress: SocketAddress,
+                    inetSocketAddress: InetSocketAddress,
                     proxy: Proxy
                 ) {
                     mark("TCP-подключение")
