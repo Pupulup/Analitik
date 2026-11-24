@@ -103,18 +103,24 @@ class MatchRepository {
         .create(OpenDotaApi::class.java)
 
     @Volatile
-    private var cachedHeroes: Map<Int, String> = emptyMap()
+    private var cachedHeroData: List<Hero> = emptyList()
+
+    private suspend fun loadHeroes(): List<Hero> {
+        if (cachedHeroData.isEmpty()) {
+            val loaded = api.getHeroes()
+            if (loaded.isNotEmpty()) cachedHeroData = loaded
+        }
+        return cachedHeroData
+    }
 
     suspend fun getMatch(id: Long): Match {
         require(id > 0) { "Введите корректный ID матча." }
         return api.getMatch(id)
     }
 
-    suspend fun getHeroNames(): Map<Int, String> {
-        if (cachedHeroes.isEmpty()) {
-            val loaded = api.getHeroes().associate { it.id to it.localizedName }
-            if (loaded.isNotEmpty()) cachedHeroes = loaded
-        }
-        return cachedHeroes
-    }
+    suspend fun getHeroNames(): Map<Int, String> =
+        loadHeroes().associate { it.id to it.localizedName }
+
+    suspend fun getHeroImageNames(): Map<Int, String> =
+        loadHeroes().associate { it.id to it.internalName.removePrefix("npc_dota_hero_") }
 }
