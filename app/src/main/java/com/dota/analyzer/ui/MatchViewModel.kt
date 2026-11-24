@@ -17,7 +17,11 @@ import com.google.gson.JsonParseException
 sealed interface MatchState {
     data object Idle : MatchState
     data object Loading : MatchState
-    data class Success(val match: Match, val heroNames: Map<Int, String>) : MatchState
+    data class Success(
+        val match: Match,
+        val heroNames: Map<Int, String>,
+        val heroImageNames: Map<Int, String>
+    ) : MatchState
     data class Error(val message: String) : MatchState
 }
 
@@ -43,7 +47,8 @@ class MatchViewModel : ViewModel() {
                     )
                 } else {
                     val heroes = runCatching { repository.getHeroNames() }.getOrDefault(emptyMap())
-                    MatchState.Success(match, heroes)
+                    val heroImages = runCatching { repository.getHeroImageNames() }.getOrDefault(emptyMap())
+                    MatchState.Success(match, heroes, heroImages)
                 }
             } catch (e: Exception) {
                 MatchState.Error(describeError(e, id))
