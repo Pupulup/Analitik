@@ -200,6 +200,7 @@ private fun EmptyState() {
 private fun MatchWorkspace(
     match: Match,
     heroNames: Map<Int, String>,
+    heroImageNames: Map<Int, String>,
     selectedTab: MatchTab,
     onTabSelected: (MatchTab) -> Unit,
     modifier: Modifier = Modifier
@@ -208,11 +209,11 @@ private fun MatchWorkspace(
     Column(modifier.fillMaxWidth()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (selectedTab) {
-                MatchTab.OVERVIEW -> OverviewScreen(match, heroNames, impacts)
-                MatchTab.PLAYERS -> PlayersScreen(match, heroNames, impacts)
-                MatchTab.ANALYSIS -> AnalysisScreen(match, heroNames, impacts)
-                MatchTab.ECONOMY -> EconomyScreen(match, impacts)
-                MatchTab.ITEMS -> ItemsScreen(match, heroNames)
+                MatchTab.OVERVIEW -> OverviewScreen(match, heroNames, heroImageNames, impacts)
+                MatchTab.PLAYERS -> PlayersScreen(match, heroNames, heroImageNames, impacts)
+                MatchTab.ANALYSIS -> AnalysisScreen(match, heroNames, heroImageNames, impacts)
+                MatchTab.ECONOMY -> EconomyScreen(match, heroNames, heroImageNames, impacts)
+                MatchTab.ITEMS -> ItemsScreen(match, heroNames, heroImageNames)
             }
         }
         NavigationBar(containerColor = Bg, tonalElevation = 0.dp) {
@@ -243,7 +244,7 @@ private fun MatchWorkspace(
 }
 
 @Composable
-private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: List<PlayerImpact>) {
+private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>, impacts: List<PlayerImpact>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -284,24 +285,28 @@ private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: L
             CardBlock {
                 Text("СОСТАВЫ КОМАНД", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
-                TeamRosterLine("СВЕТ", radiant, heroNames, Radiant)
+                TeamRosterLine("СВЕТ", radiant, heroNames, heroImageNames, Radiant)
                 Spacer(Modifier.height(10.dp))
-                TeamRosterLine("ТЬМА", dire, heroNames, Dire)
+                TeamRosterLine("ТЬМА", dire, heroNames, heroImageNames, Dire)
             }
         }
     }
 }
 
 @Composable
-private fun TeamRosterLine(title: String, players: List<Player>, heroNames: Map<Int, String>, color: Color) {
+private fun TeamRosterLine(title: String, players: List<Player>, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>, color: Color) {
     Text(title, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     players.sortedBy { it.playerSlot }.forEach { player ->
-        Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+        Row(Modifier.fillMaxWidth().padding(top = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+            HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 52.dp, height = 30.dp))
+            Spacer(Modifier.width(9.dp))
+            Text(heroNames[player.heroId] ?: "Герой #\${player.heroId}", color = Color.White, fontSize = 12.sp)
+        }
     }
 }
 
 @Composable
-private fun PlayersScreen(match: Match, heroNames: Map<Int, String>, impacts: List<PlayerImpact>) {
+private fun PlayersScreen(match: Match, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>, impacts: List<PlayerImpact>) {
     val impactByPlayer = impacts.associateBy { it.player }
     val radiant = match.players.filter { it.isRadiant }.sortedBy { it.playerSlot }
     val dire = match.players.filterNot { it.isRadiant }.sortedBy { it.playerSlot }
@@ -311,14 +316,14 @@ private fun PlayersScreen(match: Match, heroNames: Map<Int, String>, impacts: Li
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
     ) {
         item { TeamHeader("СВЕТ", radiant.size, Radiant) }
-        items(radiant) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", impactByPlayer[player]) }
+        items(radiant) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", heroImageNames[player.heroId], impactByPlayer[player]) }
         item { TeamHeader("ТЬМА", dire.size, Dire) }
         items(dire) { player -> PlayerCard(player, heroNames[player.heroId] ?: "Герой #${player.heroId}", impactByPlayer[player]) }
     }
 }
 
 @Composable
-private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, impacts: List<PlayerImpact>) {
+private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, heroImageNames: Map<Int, String>, impacts: List<PlayerImpact>) {
     val ranked = impacts.sortedByDescending { it.score }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -349,8 +354,9 @@ private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, impacts: L
                 }
             }
         }
+        item { MatchFlowInsights(match) }
         items(ranked) { impact ->
-            PlayerAnalysisCard(impact, heroNames[impact.player.heroId] ?: "Герой #${impact.player.heroId}")
+            PlayerAnalysisCard(impact, heroNames[impact.player.heroId] ?: "Герой #${impact.player.heroId}", heroImageNames[impact.player.heroId], match.players)
         }
     }
 }
@@ -359,6 +365,8 @@ private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, impacts: L
 private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String) {
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            HeroPortrait(heroImageName, Modifier.size(width = 64.dp, height = 44.dp))
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Text("${if (impact.player.isRadiant) "СВЕТ" else "ТЬМА"} · ${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
@@ -466,7 +474,7 @@ private fun TeamHeader(name: String, count: Int, color: Color) {
 }
 
 @Composable
-private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
+private fun PlayerCard(p: Player, heroName: String, heroImageName: String?, impact: PlayerImpact?) {
     var expanded by remember(p.playerSlot, p.heroId) { mutableStateOf(false) }
     CardBlock {
         Row(verticalAlignment = Alignment.CenterVertically) {
