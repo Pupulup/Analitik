@@ -21,11 +21,15 @@ data class WardPlacement(
 )
 
 object MatchDeepAnalytics {
-    private fun List<Int?>.sumIfPresent(): Int? =
-        if (any { it != null }) filterNotNull().sum() else null
+    private fun List<Int?>.sumIfPresent(): Int? {
+        val values = filterNotNull()
+        return if (values.isEmpty()) null else values.fold(0) { total, value -> total + value }
+    }
 
-    private fun List<Int?>.sumLongIfPresent(): Long? =
-        if (any { it != null }) filterNotNull().sumOf { it.toLong() } else null
+    private fun List<Int?>.sumLongIfPresent(): Long? {
+        val values = filterNotNull()
+        return if (values.isEmpty()) null else values.fold(0L) { total, value -> total + value.toLong() }
+    }
 
     fun teamfights(match: Match): List<TeamfightReport> =
         match.teamfights.mapIndexed { index, fight ->
