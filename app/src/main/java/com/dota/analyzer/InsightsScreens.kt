@@ -44,7 +44,7 @@ fun PlayerProfileScreen() {
                     onValueChange = { accountId = it.filter(Char::isDigit).take(20) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    label = { Text("Steam Account ID") },
+                    label = { Text("Steam ID (32 или 64)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Spacer(Modifier.width(8.dp))
