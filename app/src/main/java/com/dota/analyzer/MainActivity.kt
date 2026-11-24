@@ -358,6 +358,8 @@ private fun AnalysisScreen(match: Match, heroNames: Map<Int, String>, heroImageN
             }
         }
         item { MatchFlowInsights(match) }
+        item { TeamfightAnalysis(match, heroNames) }
+        item { ObjectiveAnalysis(match, heroNames) }
         items(ranked) { impact ->
             PlayerAnalysisCard(impact, heroNames[impact.player.heroId] ?: "Герой #${impact.player.heroId}", heroImageNames[impact.player.heroId], match.players)
         }
@@ -702,6 +704,68 @@ private fun AdvantageChart(
                 Text(negativeLabel, color = Dire, fontSize = 9.sp)
             }
             Text("Выше нуля — преимущество Света, ниже нуля — преимущество Тьмы.", color = Muted, fontSize = 9.sp, lineHeight = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun TeamfightAnalysis(match: Match, heroNames: Map<Int, String>) {
+    val reports = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.teamfights(match) }
+    CardBlock {
+        Text("КОМАНДНЫЕ БОИ И ПЕРЕЛОМНЫЕ МОМЕНТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text(com.dota.analyzer.data.MatchDeepAnalytics.turningPointSummary(match), color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+        if (reports.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            reports.forEachIndexed { index, fight ->
+                val swing = fight.radiantSwing
+                val winner = when {
+                    swing > 0 -> "Сдвиг в пользу Света"
+                    swing < 0 -> "Сдвиг в пользу Тьмы"
+                    else -> "Без выраженного сдвига золота"
+                }
+                val topPlayer = match.players.firstOrNull { it.playerSlot == fight.topDamageSlot }
+                Column(Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("#${fight.index}  ${com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.start)}–${com.dota.analyzer.data.MatchDeepAnalytics.formatTime(fight.end)}",
+                            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("${fight.participants} участников", color = Muted, fontSize = 9.sp)
+                    }
+                    Text(winner, color = if (swing >= 0) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Золото: Свет ${signedCompact(fight.radiantGoldDelta)} · Тьма ${signedCompact(fight.direGoldDelta)}", color = Muted, fontSize = 10.sp)
+                    Text("Потери: Свет ${fight.radiantDeaths} · Тьма ${fight.direDeaths} · выкупы ${fight.buybacks}", color = Muted, fontSize = 10.sp)
+                    Text("Урон в бою: Свет ${compactLong(fight.radiantDamage)} · Тьма ${compactLong(fight.direDamage)}", color = Muted, fontSize = 10.sp)
+                    if (topPlayer != null) {
+                        val hero = heroNames[topPlayer.heroId] ?: "Герой #${topPlayer.heroId}"
+                        Text("Больше всего урона: $hero${topPlayer.personaName?.let { " · $it" } ?: ""}", color = Accent, fontSize = 10.sp)
+                    }
+                }
+                if (index != reports.lastIndex) HorizontalDivider(color = Color(0xFF2A3443))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ObjectiveAnalysis(match: Match, heroNames: Map<Int, String>) {
+    val objectives = remember(match) { com.dota.analyzer.data.MatchDeepAnalytics.objectives(match) }
+    if (objectives.isEmpty()) return
+    CardBlock {
+        Text("КОНТРОЛЬ КАРТЫ И ОБЪЕКТЫ", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text("События, которые OpenDota смог определить по реплею.", color = Muted, fontSize = 10.sp)
+        objectives.forEach { event ->
+            val player = match.players.firstOrNull { it.playerSlot == event.playerSlot }
+            val sideColor = when (event.isRadiant) { true -> Radiant; false -> Dire; null -> Muted }
+            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(com.dota.analyzer.data.MatchDeepAnalytics.formatTime(event.time), color = Accent, fontSize = 10.sp, modifier = Modifier.width(48.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(event.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    val actor = player?.let { heroNames[it.heroId] ?: "Герой #${it.heroId}" }
+                    val actorLabel = if (actor != null) "$actor · ${if (player?.isRadiant == true) "Свет" else "Тьма"}" else event.detail
+                    Text(actorLabel, color = sideColor, fontSize = 9.sp)
+                }
+            }
         }
     }
 }
