@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
@@ -819,7 +820,7 @@ private fun MatchMapScreen(match: Match) {
             it.start to "Командный бой ${it.index}"
         }
     }
-    val eventFeed = (objectives.map { it.time to it.title } + fightEvents).sortedBy { it.first }
+    val eventFeed = (objectives.map { it.time to it.title } + fightEvents).filter { it.first <= selectedMinute * 60f }.sortedBy { it.first }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
