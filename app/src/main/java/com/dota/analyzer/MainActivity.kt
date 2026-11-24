@@ -238,13 +238,15 @@ private fun PlayerCard(p: Player, heroName: String, impact: PlayerImpact?) {
             DetailLine("Выкупы", p.buybackCount?.toString() ?: "Нет данных")
             DetailLine("Действий в минуту", p.actionsPerMinute?.toString() ?: "Нет данных")
             DetailLine("Нейтральные убийства", p.neutralKills?.toString() ?: "Нет данных")
-            if (impact.strengths.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text("Сильные стороны: ${impact.strengths.joinToString()}", color = Radiant, fontSize = 10.sp)
-            }
-            if (impact.weaknesses.isNotEmpty()) {
-                Spacer(Modifier.height(5.dp))
-                Text("Зоны роста: ${impact.weaknesses.joinToString()}", color = Dire, fontSize = 10.sp)
+            impact?.let { playerImpact ->
+                if (playerImpact.strengths.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Сильные стороны: ${playerImpact.strengths.joinToString()}", color = Radiant, fontSize = 10.sp)
+                }
+                if (playerImpact.weaknesses.isNotEmpty()) {
+                    Spacer(Modifier.height(5.dp))
+                    Text("Зоны роста: ${playerImpact.weaknesses.joinToString()}", color = Dire, fontSize = 10.sp)
+                }
             }
             val purchases = p.purchaseLog.orEmpty().takeLast(5).asReversed()
             if (purchases.isNotEmpty()) {
