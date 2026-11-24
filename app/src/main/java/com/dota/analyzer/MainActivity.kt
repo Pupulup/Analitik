@@ -210,7 +210,7 @@ private fun OverviewScreen(match: Match, heroNames: Map<Int, String>, impacts: L
             val top = impacts.maxByOrNull { it.score }
             val name = top?.let { heroNames[it.player.heroId] ?: "Герой #\${it.player.heroId}" } ?: "Нет данных"
             CardBlock {
-                Text("ЛУЧШШИЙ ПО ИНДЕКСУ ВКЛАДА", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("ЛУЧШИЙ ПО ИНДЕКСУ ВКЛАДА", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Text(name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text("Оценка \${top?.score ?: "—"} / 100 · сравнительный показатель внутри матча", color = Muted, fontSize = 11.sp)
