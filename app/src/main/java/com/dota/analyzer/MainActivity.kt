@@ -300,7 +300,10 @@ private fun TeamRosterLine(title: String, players: List<Player>, heroNames: Map<
         Row(Modifier.fillMaxWidth().padding(top = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             HeroPortrait(heroImageNames[player.heroId], Modifier.size(width = 52.dp, height = 30.dp))
             Spacer(Modifier.width(9.dp))
-            Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp)
+            Column {
+                Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp)
+                player.personaName?.takeIf { it.isNotBlank() }?.let { Text(it, color = Muted, fontSize = 9.sp) }
+            }
         }
     }
 }
@@ -369,6 +372,7 @@ private fun PlayerAnalysisCard(impact: PlayerImpact, heroName: String, heroImage
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                impact.player.personaName?.takeIf { it.isNotBlank() }?.let { Text(it, color = Muted, fontSize = 10.sp) }
                 Text("${if (impact.player.isRadiant) "СВЕТ" else "ТЬМА"} · ${impact.roleName}", color = if (impact.player.isRadiant) Radiant else Dire, fontSize = 10.sp)
             }
             Text("${impact.score}/100", color = scoreColor(impact.score), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
@@ -437,7 +441,7 @@ private fun EconomyScreen(match: Match, heroNames: Map<Int, String>, heroImageNa
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                            Text(if (player.isRadiant) "СВЕТ" else "ТЬМА", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
+                            Text(player.personaName?.takeIf { it.isNotBlank() } ?: if (player.isRadiant) "Свет · игрок" else "Тьма · игрок", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("NW ${compact(player.netWorth)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -484,7 +488,8 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>, heroImageName
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text("${if (player.isRadiant) "СВЕТ" else "ТЬМА"} · ${purchases.size} покупок", color = if (player.isRadiant) Radiant else Dire, fontSize = 10.sp)
+                            Text(player.personaName?.takeIf { it.isNotBlank() } ?: if (player.isRadiant) "Свет" else "Тьма", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
+                            Text("${purchases.size} покупок", color = Muted, fontSize = 10.sp)
                         }
                         TextButton(onClick = { expanded = !expanded }) {
                             Text(if (expanded) "Свернуть" else "Показать", color = Accent, fontSize = 11.sp)
@@ -532,6 +537,7 @@ private fun PlayerCard(p: Player, heroName: String, heroImageName: String?, impa
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(heroName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                p.personaName?.takeIf { it.isNotBlank() }?.let { Text(it, color = Muted, fontSize = 10.sp) }
                 Text("${if (p.isRadiant) "СВЕТ" else "ТЬМА"} • ${impact?.roleName ?: MatchAnalytics.laneName(p.laneRole)}", color = if (p.isRadiant) Radiant else Dire, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
