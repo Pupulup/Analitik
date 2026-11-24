@@ -488,7 +488,8 @@ private fun ItemsScreen(match: Match, heroNames: Map<Int, String>, heroImageName
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(heroNames[player.heroId] ?: "Герой #${player.heroId}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(player.personaName?.takeIf { it.isNotBlank() } ?: if (player.isRadiant) "Свет" else "Тьма", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
+                            val teamLabel = if (player.isRadiant) "Свет" else "Тьма"
+                            Text(player.personaName?.takeIf { it.isNotBlank() } ?: "$teamLabel · игрок", color = if (player.isRadiant) Radiant else Dire, fontSize = 9.sp)
                             Text("${purchases.size} покупок", color = Muted, fontSize = 10.sp)
                         }
                         TextButton(onClick = { expanded = !expanded }) {
@@ -722,19 +723,20 @@ private fun MatchFlowInsights(match: Match) {
         if (gold.isNotEmpty()) {
             Text(if (maxGold > 0) "Максимальное преимущество Света по золоту: ${signedCompact(maxGold)} на ${goldPeakMinute} мин." else "Свет не получал преимущества по золоту.", color = Radiant, fontSize = 11.sp)
             Text(if (minGold < 0) "Максимальное преимущество Тьмы по золоту: ${compact(abs(minGold))} на ${goldLowMinute} мин." else "Тьма не получала преимущества по золоту.", color = Dire, fontSize = 11.sp)
-            Text(
-                "К концу матча: ${currentGold?.let { if (it > 0) "Свет +${compact(it)}" else if (it < 0) "Тьма +${compact(abs(it))}" else "равенство" } ?: "нет данных"}.",
-                color = Color.White, fontSize = 11.sp
-            )
+            val finalLeadText = when {
+                currentGold == null -> "нет данных"
+                currentGold > 0 -> "Свет +${compact(currentGold)}"
+                currentGold < 0 -> "Тьма +${compact(abs(currentGold))}"
+                else -> "равенство"
+            }
+            Text("К концу матча: $finalLeadText.", color = Color.White, fontSize = 11.sp)
         } else {
             Text("График преимущества по золоту отсутствует в данных матча.", color = Muted, fontSize = 11.sp)
         }
         if (xp.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
-            Text(
-                "Максимальная разница по опыту: ${compact(maxOf(abs(maxXp), abs(minXp)))} в пользу ${if (abs(maxXp) >= abs(minXp)) "Света" else "Тьмы"}.",
-                color = Muted, fontSize = 10.sp
-            )
+            val xpLeader = if (abs(maxXp) >= abs(minXp)) "Света" else "Тьмы"
+            Text("Максимальная разница по опыту: ${compact(maxOf(abs(maxXp), abs(minXp)))} в пользу $xpLeader.", color = Muted, fontSize = 10.sp)
         }
     }
 }
