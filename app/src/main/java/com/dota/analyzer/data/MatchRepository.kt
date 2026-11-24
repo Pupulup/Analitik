@@ -124,15 +124,17 @@ class MatchRepository {
     suspend fun getHeroImageNames(): Map<Int, String> =
         loadHeroes().associate { it.id to it.internalName.removePrefix("npc_dota_hero_") }
 
-    suspend fun getPlayerProfile(accountId: Long): PlayerProfileResponse {
+    private fun normalizeAccountId(accountId: Long): Long {
         require(accountId > 0) { "Введите корректный Steam Account ID." }
-        return api.getPlayerProfile(accountId)
+        val steam64Base = 76561197960265728L
+        return if (accountId >= steam64Base) accountId - steam64Base else accountId
     }
 
-    suspend fun getPlayerMatches(accountId: Long, limit: Int = 30): List<PlayerMatchSummary> {
-        require(accountId > 0) { "Введите корректный Steam Account ID." }
-        return api.getPlayerMatches(accountId, limit.coerceIn(1, 100))
-    }
+    suspend fun getPlayerProfile(accountId: Long): PlayerProfileResponse =
+        api.getPlayerProfile(normalizeAccountId(accountId))
+
+    suspend fun getPlayerMatches(accountId: Long, limit: Int = 30): List<PlayerMatchSummary> =
+        api.getPlayerMatches(normalizeAccountId(accountId), limit.coerceIn(1, 100))
 
     suspend fun getGuideHeroes(): List<HeroStat> =
         api.getHeroStats().filter { it.id > 0 && it.localizedName.isNotBlank() }
