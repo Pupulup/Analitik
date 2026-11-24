@@ -137,7 +137,7 @@ object MatchAnalytics {
                 totalNetWorth = team.sumOf { it.netWorth.toLong() },
                 averageGpm = team.averageOf { it.gpm },
                 averageXpm = team.averageOf { it.xpm },
-                averageImpact = teamImpacts.averageOf { it.score }
+                averageImpact = teamImpacts.averageImpactOf { it.score }
             )
         }
 
@@ -184,6 +184,6 @@ object MatchAnalytics {
     private fun List<Player>.averageOf(selector: (Player) -> Int): Int =
         if (isEmpty()) 0 else (sumOf(selector).toDouble() / size).roundToInt()
 
-    private fun List<PlayerImpact>.averageOf(selector: (PlayerImpact) -> Int): Int =
+    private fun List<PlayerImpact>.averageImpactOf(selector: (PlayerImpact) -> Int): Int =
         if (isEmpty()) 0 else (sumOf(selector).toDouble() / size).roundToInt()
 }
