@@ -14,7 +14,9 @@ data class Match(
     @SerializedName("radiant_gold_adv") val radiantGoldAdv: List<Int> = emptyList(),
     @SerializedName("radiant_xp_adv") val radiantXpAdv: List<Int> = emptyList(),
     @SerializedName("objectives") val objectives: List<ObjectiveEvent> = emptyList(),
-    @SerializedName("teamfights") val teamfights: List<Teamfight> = emptyList()
+    @SerializedName("teamfights") val teamfights: List<Teamfight> = emptyList(),
+    @SerializedName("obs_log") val observerWardEvents: List<WardEvent> = emptyList(),
+    @SerializedName("sen_log") val sentryWardEvents: List<WardEvent> = emptyList()
 )
 
 data class Player(
@@ -92,9 +94,17 @@ data class Teamfight(
 data class TeamfightPlayer(
     @SerializedName("player_slot") val playerSlot: Int = -1,
     @SerializedName("buyback") val buyback: Boolean = false,
-    @SerializedName("deaths") val deaths: Int = 0,
-    @SerializedName("gold_delta") val goldDelta: Int = 0,
-    @SerializedName("xp_delta") val xpDelta: Int = 0,
-    @SerializedName("damage") val damage: Int = 0,
-    @SerializedName("healing") val healing: Int = 0
+    @SerializedName("deaths") val deaths: Int? = null,
+    @SerializedName("gold_delta") val goldDelta: Int? = null,
+    @SerializedName("xp_delta") val xpDelta: Int? = null,
+    @SerializedName("damage") val damage: Int? = null,
+    @SerializedName("healing") val healing: Int? = null
+)
+
+data class WardEvent(
+    @SerializedName("time") val time: Int = 0,
+    @SerializedName("player_slot") val playerSlot: Int? = null,
+    @SerializedName("x") val x: Int? = null,
+    @SerializedName("y") val y: Int? = null,
+    @SerializedName("key") val key: String = ""
 )
