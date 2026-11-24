@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
+import com.google.gson.JsonParseException
 
 sealed interface MatchState {
     data object Idle : MatchState
@@ -31,17 +34,34 @@ class MatchViewModel : ViewModel() {
             _state.value = MatchState.Loading
             _state.value = try {
                 val match = repository.getMatch(id)
-                val heroes = runCatching { repository.getHeroNames() }.getOrDefault(emptyMap())
-                MatchState.Success(match, heroes)
+                if (match.players.isEmpty()) {
+                    MatchState.Error(
+                        "OpenDota вернул матч $id, но не вернул статистику игроков. " +
+                            "Возможно, реплей ещё не обработан или подробные данные недоступны."
+                    )
+                } else {
+                    val heroes = runCatching { repository.getHeroNames() }.getOrDefault(emptyMap())
+                    MatchState.Success(match, heroes)
+                }
             } catch (e: Exception) {
-                MatchState.Error(
-                    when {
-                        e.message?.contains("404") == true -> "Матч не найден или ещё не обработан OpenDota."
-                        e.message?.contains("Unable to resolve host", true) == true -> "Нет подключения к интернету."
-                        else -> "Не удалось загрузить матч. Проверьте ID и повторите попытку."
-                    }
-                )
+                MatchState.Error(describeError(e, id))
             }
+        }
+    }
+
+    private fun describeError(error: Exception, matchId: Long): String {
+        return when (error) {
+            is HttpException -> when (error.code()) {
+                404 -> "OpenDota вернул HTTP 404 для матча $matchId. " +
+                    "Это не доказывает, что матча не существует: сервис может не иметь записи о нём."
+                403 -> "OpenDota отклонил запрос (HTTP 403). Возможна блокировка доступа со стороны сервиса или сети."
+                429 -> "OpenDota ограничил частоту запросов (HTTP 429). Подождите немного и попробуйте снова."
+                in 500..599 -> "Сервер OpenDota временно недоступен (HTTP ${error.code()}). Попробуйте позже."
+                else -> "OpenDota вернул HTTP ${error.code()}: ${error.message()}"
+            }
+            is IOException -> "Сетевая ошибка при обращении к OpenDota: ${error.localizedMessage ?: "соединение прервано"}"
+            is JsonParseException -> "OpenDota вернул ответ, который приложение не смогло разобрать: ${error.localizedMessage ?: "ошибка JSON"}"
+            else -> "Ошибка ${error.javaClass.simpleName}: ${error.localizedMessage ?: "подробности отсутствуют"}"
         }
     }
 }
